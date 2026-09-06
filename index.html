@@ -281,6 +281,21 @@
     .notes-request { width: 100%; min-height: 92px; resize: vertical; margin-top: 8px; }
     .notes-helper { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
     .note-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 12px; }
+    .ai-layout { display: grid; grid-template-columns: .62fr 1.38fr; gap: 16px; }
+    .ai-guide, .ai-chat-panel { padding: clamp(20px, 3vw, 30px); }
+    .ai-guide h2, .ai-chat-panel h2 { margin: 0 0 10px; color: var(--ink-blue); }
+    .ai-status { display: flex; align-items: center; gap: 8px; margin: 16px 0; color: var(--muted); font-size: 13px; }
+    .ai-status-dot { width: 9px; height: 9px; border: 1px solid var(--deep-teal); background: var(--slate); }
+    .ai-status[data-state="ready"] .ai-status-dot { background: #24584d; }
+    .ai-status[data-state="error"] .ai-status-dot { background: #873737; }
+    .ai-chat-log { min-height: 250px; max-height: 520px; overflow: auto; display: grid; align-content: start; gap: 10px; margin: 16px 0; padding: 14px; border: 1px solid var(--line); background: rgba(255,255,255,.48); }
+    .ai-message { max-width: 88%; padding: 12px 14px; border-left: 4px solid var(--blue); background: var(--paper); color: var(--ink); line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .ai-message.user { justify-self: end; border-left: 0; border-right: 4px solid var(--deep-teal); background: var(--mist); }
+    .ai-message small { display: block; margin-bottom: 4px; color: var(--muted); font-weight: 900; }
+    .ai-question { width: 100%; min-height: 92px; resize: vertical; border: 1px solid var(--line); border-radius: 4px; padding: 12px; background: var(--white); color: var(--ink); font: inherit; line-height: 1.6; }
+    .ai-suggestions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+    .ai-suggestion { border: 1px solid var(--deep-teal); border-radius: 4px; padding: 8px 10px; background: transparent; color: var(--deep-teal); cursor: pointer; }
+    .ai-disclaimer { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.65; }
     .notes-workbench { display: grid; gap: 16px; }
     .note-preview { padding: clamp(22px, 4vw, 40px); }
     .note-preview h1 { margin: 8px 0 18px; color: var(--ink-blue); font-size: clamp(30px, 5vw, 52px); line-height: 1.15; }
@@ -499,7 +514,7 @@
     @media (max-width: 900px) {
       .mode-grid, .case-grid { grid-template-columns: 1fr; }
       .mode-card { min-height: 235px; }
-      .court-grid, .learning-grid, .daily-layout { grid-template-columns: 1fr; }
+      .court-grid, .learning-grid, .daily-layout, .ai-layout { grid-template-columns: 1fr; }
       .topic-list { grid-template-columns: repeat(2, 1fr); }
       .topic-rail { position: static; max-height: none; }
       .daily-aside { order: -1; }
@@ -646,6 +661,7 @@
       <div class="tabs" role="tablist">
         <button class="tab-btn active" type="button" data-civic-tab="quiz">考題練習</button>
         <button class="tab-btn" type="button" data-civic-tab="notes">筆記精華</button>
+        <button class="tab-btn" type="button" data-civic-tab="ask">知識提問</button>
       </div>
       <div id="civicQuizView">
         <section class="panel selector-panel">
@@ -687,6 +703,37 @@
             <div class="note-actions"><button class="primary-btn" type="button" id="sendNotesMessage">送出修正指令</button></div>
             <div class="legal-note hidden" id="notesResponse"></div>
             <div class="team-chat-log" id="noteChatLog" aria-live="polite"></div>
+          </section>
+        </div>
+      </div>
+      <div class="hidden" id="civicAskView">
+        <div class="ai-layout">
+          <aside class="panel ai-guide">
+            <div class="kicker">OLLAMA CIVICS TUTOR</div>
+            <h2 class="serif">公民知識提問區</h2>
+            <p class="notes-helper">這個 Ollama 助教只回答高中公民、民主、人權、經濟與基礎法律教育問題。</p>
+            <div class="ai-status" id="aiStatus" data-state="loading" role="status"><span class="ai-status-dot" aria-hidden="true"></span><span id="aiStatusText">正在確認 Ollama 服務…</span></div>
+            <label class="selector-field">聚焦章節
+              <select id="aiChapter"><option value="">不限章節</option></select>
+            </label>
+            <div class="ai-suggestions" aria-label="問題範例">
+              <button class="ai-suggestion" type="button" data-ai-question="比例原則要怎麼判斷？">比例原則</button>
+              <button class="ai-suggestion" type="button" data-ai-question="民事責任和刑事責任有什麼不同？">民事與刑事</button>
+              <button class="ai-suggestion" type="button" data-ai-question="機會成本可以用生活例子解釋嗎？">機會成本</button>
+            </div>
+            <p class="ai-disclaimer">AI 內容僅供學習，不取代教師或律師意見。法律問題仍應以全國法規資料庫與主管機關最新公告為準。</p>
+          </aside>
+          <section class="panel ai-chat-panel">
+            <h2 class="serif">問一個公民問題</h2>
+            <div class="ai-chat-log" id="aiChatLog" aria-live="polite"></div>
+            <label class="selector-field" style="display:block">你的問題
+              <textarea class="ai-question" id="aiQuestion" maxlength="400" placeholder="例如：為什麼限制基本權還要符合比例原則？"></textarea>
+            </label>
+            <div class="note-actions">
+              <button class="primary-btn" type="button" id="sendAiQuestion">送出問題</button>
+              <button class="soft-btn" type="button" id="clearAiChat">清除對話</button>
+            </div>
+            <p class="notes-helper">最多 400 字；按 Ctrl + Enter 也可以送出。對話不會寫入共用留言資料庫。</p>
           </section>
         </div>
       </div>
@@ -1232,7 +1279,9 @@
       document.querySelectorAll("[data-civic-tab]").forEach(button => button.classList.toggle("active", button.dataset.civicTab === tab));
       $("civicQuizView").classList.toggle("hidden", tab !== "quiz");
       $("civicNotesView").classList.toggle("hidden", tab !== "notes");
+      $("civicAskView").classList.toggle("hidden", tab !== "ask");
       if (tab === "notes") syncSharedMessages();
+      if (tab === "ask") loadAiStatus();
     }
 
     function renderTopics() {
@@ -1329,10 +1378,12 @@
 
     function setupNoteSelectors() {
       $("noteSource").innerHTML = `<option value="naer-108">${escapeHtml(CURRICULUM.source.organization)}｜108 課綱高中公民與社會</option>`;
-      $("noteChapter").innerHTML = CURRICULUM.themes.map(theme => {
+      const groupedOptions = CURRICULUM.themes.map(theme => {
         const options = CURRICULUM.units.filter(unit => unit.theme === theme.id).map(unit => `<option value="${unit.id}">${escapeHtml(unit.code)}｜${escapeHtml(unit.title)}</option>`).join("");
         return `<optgroup label="${escapeHtml(theme.label)}">${options}</optgroup>`;
       }).join("");
+      $("noteChapter").innerHTML = groupedOptions;
+      $("aiChapter").innerHTML = `<option value="">不限章節</option>${groupedOptions}`;
     }
 
     function renderTopics() {
@@ -1403,8 +1454,15 @@
     function generateNotesPreview() { renderNotePreview(); $("notesResponse").textContent = "已生成結構化預覽，請先檢查來源與章節考據，再使用下方對話框微調。"; $("notesResponse").classList.remove("hidden"); }
     const NOTE_DB_NAME = "civic-learning-notes";
     const NOTE_STORE_NAME = "messages";
-    const NOTE_API_PATH = "https://civic-law-lab-212.yichengc869.workers.dev/api/messages";
+    const WORKER_API_ORIGIN = ["127.0.0.1", "localhost"].includes(location.hostname) ? location.origin : "https://civic-law-lab-212.yichengc869.workers.dev";
+    const NOTE_API_PATH = `${WORKER_API_ORIGIN}/api/messages`;
+    const AI_API_PATH = `${WORKER_API_ORIGIN}/api/ai`;
     let noteSyncInFlight = false;
+    const aiState = {
+      busy: false,
+      statusLoaded: false,
+      messages: [{ role: "assistant", content: "你好，我是公民知識助教。你可以問我課綱概念、法律原則、民主制度或經濟生活問題。" }]
+    };
 
     function getNoteClientId() {
       try {
@@ -1533,6 +1591,96 @@
           $("notesResponse").textContent = `留言儲存失敗：${localError.message}`; $("notesResponse").classList.remove("hidden");
         }
       }
+    }
+
+    function renderAiMessages() {
+      const log = $("aiChatLog");
+      log.innerHTML = "";
+      aiState.messages.forEach(message => {
+        const item = document.createElement("div");
+        item.className = `ai-message ${message.role === "user" ? "user" : "assistant"}`;
+        const label = document.createElement("small");
+        label.textContent = message.role === "user" ? "你的問題" : "Ollama 助教";
+        const content = document.createElement("div");
+        content.textContent = message.content;
+        item.append(label, content);
+        log.append(item);
+      });
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function setAiStatus(state, message) {
+      $("aiStatus").dataset.state = state;
+      $("aiStatusText").textContent = message;
+    }
+
+    async function loadAiStatus() {
+      if (aiState.statusLoaded) return;
+      setAiStatus("loading", "正在確認 Ollama 服務…");
+      try {
+        const response = await fetch(`${AI_API_PATH}/status`, { headers: { Accept: "application/json" } });
+        const payload = await response.json().catch(() => ({}));
+        aiState.statusLoaded = true;
+        if (!response.ok || !payload.available) {
+          setAiStatus("error", payload.error || "Ollama 服務尚未完成設定");
+          return;
+        }
+        setAiStatus("ready", `Ollama 已連線｜${payload.model}`);
+      } catch {
+        setAiStatus("error", "目前無法連線到 Ollama 服務");
+      }
+    }
+
+    async function askCivicAi() {
+      const question = $("aiQuestion").value.trim();
+      if (!question || aiState.busy) return;
+      if (question.length > 400) { showToast("問題不能超過 400 字"); return; }
+      const chapterId = $("aiChapter").value;
+      const chapter = CURRICULUM.units.find(unit => unit.id === chapterId);
+      const history = aiState.messages.filter(message => message.role === "user" || message.role === "assistant").slice(-6);
+      aiState.messages.push({ role: "user", content: question });
+      $("aiQuestion").value = "";
+      aiState.busy = true;
+      $("sendAiQuestion").disabled = true;
+      $("sendAiQuestion").textContent = "思考中…";
+      renderAiMessages();
+      setAiStatus("loading", "Ollama 正在整理答案…");
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 55_000);
+      try {
+        const response = await fetch(`${AI_API_PATH}/ask`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({
+            question,
+            clientId: getNoteClientId(),
+            requestId: crypto.randomUUID(),
+            chapter: chapter ? { id: chapter.id, code: chapter.code, title: chapter.title } : null,
+            history
+          }),
+          signal: controller.signal
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || "Ollama 暫時無法回答");
+        aiState.messages.push({ role: "assistant", content: payload.answer });
+        setAiStatus("ready", `Ollama 已連線｜${payload.model}`);
+      } catch (error) {
+        const message = error.name === "AbortError" ? "模型回應逾時，請稍後再試。" : error.message;
+        aiState.messages.push({ role: "assistant", content: message });
+        setAiStatus("error", message);
+      } finally {
+        clearTimeout(timeout);
+        aiState.busy = false;
+        $("sendAiQuestion").disabled = false;
+        $("sendAiQuestion").textContent = "送出問題";
+        renderAiMessages();
+      }
+    }
+
+    function clearAiChat() {
+      aiState.messages = [{ role: "assistant", content: "對話已清除。請提出新的公民或法律知識問題。" }];
+      renderAiMessages();
+      $("aiQuestion").focus();
     }
 
     dailyState.solved = new Set();
@@ -1737,6 +1885,9 @@
       if (target.id === "applyBook") selectBook($("bookSelector").value);
       if (target.id === "generateNotes") generateNotesPreview();
       if (target.id === "sendNotesMessage") sendNotesMessage();
+      if (target.id === "sendAiQuestion") askCivicAi();
+      if (target.id === "clearAiChat") clearAiChat();
+      if (target.dataset.aiQuestion) { $("aiQuestion").value = target.dataset.aiQuestion; $("aiQuestion").focus(); }
       if (target.id === "clearNotesRequest") { $("notesRequest").value = ""; $("notesResponse").classList.add("hidden"); }
     });
 
@@ -1744,6 +1895,7 @@
     document.addEventListener("keydown", event => {
       if (event.key === "Escape") closeModals();
       if ((event.key === "Enter" || event.key === " ") && document.activeElement.id === "brandHome") goHome();
+      if (event.key === "Enter" && event.ctrlKey && document.activeElement.id === "aiQuestion") { event.preventDefault(); askCivicAi(); }
     });
     $("brandHome").addEventListener("click", goHome);
 
@@ -1753,6 +1905,7 @@
     civicState.questions = [...CIVICS];
     setupBooks();
     setupNoteSelectors();
+    renderAiMessages();
     renderTopics();
     renderQuiz();
     renderDaily();

@@ -4,6 +4,9 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "OLLAMA_MODEL": "gpt-oss:20b"
+  },
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
