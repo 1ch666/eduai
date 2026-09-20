@@ -34,7 +34,8 @@ const JSON_HEADERS = {
 
 const TRUSTED_WEB_ORIGINS = new Set([
   "https://civic-law-lab-212.yichengc869.workers.dev",
-  "https://s141374-crypto.github.io"
+  "https://s141374-crypto.github.io",
+  "https://1ch666.github.io"
 ]);
 
 function responseHeaders(origin?: string): Headers {
