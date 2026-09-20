@@ -1,6 +1,9 @@
 import { copyFile, cp, mkdir } from "node:fs/promises";
 
 await mkdir(new URL("../public/", import.meta.url), { recursive: true });
+for (const file of ["styles.css", "favicon.svg", "robots.txt", "sitemap.xml"]) {
+  await copyFile(new URL(`../${file}`, import.meta.url), new URL(`../public/${file}`, import.meta.url));
+}
 await copyFile(
   new URL("../index.html", import.meta.url),
   new URL("../public/index.html", import.meta.url)

@@ -4,7 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#f7f8f7">
-  <title>公民法律研究室｜互動學習遊戲</title>
+  <title>公民法律研究室｜模擬法庭・公民練習・法律問答</title>
+  <meta name="description" content="從生活情境理解公民與法律。免費體驗模擬法庭、公民考題、筆記精華與 AI 問答，透過公開法規練習法律判斷，不需登入。">
+  <link rel="canonical" href="https://1ch666.github.io/eduai/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_TW">
+  <meta property="og:site_name" content="公民法律研究室">
+  <meta property="og:title" content="公民法律研究室｜從生活理解法律">
+  <meta property="og:description" content="模擬法庭、公民練習、筆記整理與 AI 問答。免費開始，不需登入。">
+  <meta property="og:url" content="https://1ch666.github.io/eduai/">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="公民法律研究室">
+  <meta name="twitter:description" content="從生活理解法律：模擬法庭、公民練習與筆記整理。">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"公民法律研究室","url":"https://1ch666.github.io/eduai/","inLanguage":"zh-Hant","applicationCategory":"EducationalApplication","operatingSystem":"Web browser","isAccessibleForFree":true,"description":"透過模擬法庭、公民練習、筆記整理與 AI 問答學習公民及法律。"}</script>
   <style>
     :root {
       /* Supplied Dulux / AkzoNobel palette. OCR 1488, 3088 and 2788 = 14BB, 30BB and 27BB. */
@@ -541,8 +554,10 @@
       *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
     }
   </style>
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
+  <a class="skip-link" href="#mainContent">跳至主要內容</a>
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand" id="brandHome" role="button" tabindex="0" aria-label="回到模式選擇">
@@ -555,38 +570,42 @@
     </div>
   </header>
 
-  <main>
+  <main id="mainContent" tabindex="-1">
     <section class="screen active" id="modeScreen">
       <div class="hero">
         <div class="hero-copy">
-          <div class="kicker">Interactive civic lab</div>
-          <h1 class="serif">今天想用哪種方式<br><span>理解法律？</span></h1>
-          <p>從模擬開庭、考題練習到生活法律冷知識，選一條路線開始。每個模式都能直接互動，不需要登入。</p>
+          <div class="kicker">從生活開始的一堂公民課</div>
+          <h1 class="serif">法律，<br><span>就在生活裡。</span></h1>
+          <p>看案件、練觀念，把法律讀懂。</p>
         </div>
+        <div class="hero-art" aria-hidden="true"><span class="art-label">CIVIC / LAW</span><span class="art-symbol">§</span><span class="art-caption">觀察 · 思考 · 判斷</span></div>
       </div>
 
-      <div class="selection-label">介面一・選擇學習模式</div>
+      <div class="selection-label">選一個開始 <span>免費使用 · 不需登入</span></div>
       <div class="mode-grid">
         <button class="mode-card" type="button" data-mark="01" data-mode="court">
           <span class="mode-no">01 / COURT</span>
           <h2 class="serif">模擬法庭</h2>
-          <p>體驗案件流程，蒐集證物、追問證人並在關鍵時刻提出異議。</p>
+          <p>找證據、問證人，練習判斷。</p>
           <span class="mode-enter">進入法庭 →</span>
         </button>
         <button class="mode-card" type="button" data-mark="02" data-mode="civics">
           <span class="mode-no">02 / SCHOOL</span>
           <h2 class="serif">公民小學堂</h2>
-          <p>練習高中公民考題，或用精華筆記快速整理常考觀念。</p>
+          <p>從一道題，弄懂一個觀念。</p>
           <span class="mode-enter">開始練習 →</span>
         </button>
         <button class="mode-card" type="button" data-mark="03" data-mode="daily">
           <span class="mode-no">03 / DAILY</span>
-          <h2 class="serif">有趣問題提問</h2>
-          <p>用日常情境挑戰法律直覺，每題附上一則 daily 法律小常識。</p>
+          <h2 class="serif">生活法律問答</h2>
+          <p>生活情境與公開法規，隨機挑戰。</p>
           <span class="mode-enter">今日一問 →</span>
         </button>
       </div>
-
+      <div class="quick-tools" aria-label="學習工具">
+        <button type="button" data-shortcut="notes"><span>筆記精華</span><span>整理重點 ↗</span></button>
+        <button type="button" data-shortcut="ask"><span>AI 小助理</span><span>問個問題 ↗</span></button>
+      </div>
       <div class="palette" aria-label="指定配色">
         <span>指定色彩系統</span>
         <span class="swatch" style="background:#a8b8a7" title="45GY 55/052"></span>
@@ -682,7 +701,7 @@
       <div class="hidden" id="civicNotesView">
         <section class="panel selector-panel">
           <h2 class="serif">筆記精華整理</h2>
-          <p class="notes-helper">先選擇課綱來源與章節，再生成畫面預覽。確認內容後，可在下方小隊對話框提出微調；本功能不會直接生成或下載純文字檔。</p>
+          <p class="notes-helper">選擇章節，查看重點與概念比較。</p>
           <div class="selector-row">
             <label class="selector-field">參考課綱
               <select id="noteSource"><option value="naer-108">國教院 108 課綱｜高中公民與社會</option></select>
@@ -692,7 +711,6 @@
             </label>
             <button class="primary-btn" type="button" id="generateNotes">生成預覽</button>
           </div>
-          <p class="notes-helper">預覽會顯示參考來源、核心概念、條列重點與容易混淆概念比較。</p>
         </section>
         <div class="notes-workbench">
           <section class="panel note-preview" id="notePreview" aria-live="polite"><p class="notes-helper">尚未生成預覽。選擇來源與章節後，按下「生成預覽」。</p></section>
@@ -757,6 +775,8 @@
       </div>
     </section>
   </main>
+  <footer class="site-footer"><span>公民法律研究室</span><span>學習用途，不代替專業法律意見。</span></footer>
+  <noscript><p class="site-footer">互動練習需要 JavaScript，請於瀏覽器設定中啟用。</p></noscript>
 
   <div class="modal" id="evidenceModal" role="dialog" aria-modal="true" aria-labelledby="evidenceTitle">
     <div class="modal-box"><div class="modal-head"><h2 class="serif" id="evidenceTitle">證物袋</h2><button class="close-btn" type="button" data-close="evidenceModal" aria-label="關閉">×</button></div><div class="modal-body" id="evidenceList"></div></div>
@@ -1093,6 +1113,8 @@
       document.querySelectorAll(".screen").forEach(screen => screen.classList.toggle("active", screen.id === id));
       $("headerBack").classList.toggle("hidden", id === "modeScreen");
       closeModals();
+      const heading = $(id).querySelector("h1");
+      if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
@@ -1858,6 +1880,7 @@
     document.addEventListener("click", event => {
       const target = event.target.closest("button, [role='button']");
       if (!target) return;
+      if (target.dataset.shortcut) { showScreen("civicsScreen"); setCivicTab(target.dataset.shortcut); }
       if (target.dataset.mode === "court") showScreen("caseScreen");
       if (target.dataset.mode === "civics") showScreen("civicsScreen");
       if (target.dataset.mode === "daily") { renderDaily(); showScreen("dailyScreen"); }
@@ -1908,8 +1931,7 @@
     renderAiMessages();
     renderTopics();
     renderQuiz();
-    renderDaily();
-    loadNoteMessages();
+    // Load law shards and shared messages only when their views are opened.
     window.addEventListener("online", syncSharedMessages);
     window.setInterval(() => {
       if ($("civicsScreen").classList.contains("active") && !$("civicNotesView").classList.contains("hidden")) syncSharedMessages();
