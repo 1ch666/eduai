@@ -57,6 +57,25 @@ main { padding-top: 40px; padding-bottom: 48px; }
 select, textarea { max-width: 100%; font-size: 16px; }
 .learning-grid > *, .ai-layout > *, .daily-layout > * { min-width: 0; }
 .notes-preview { overflow-x: auto; }
+/* Let grid/flex children shrink below their text's intrinsic width. */
+.screen, .hero > *, .mode-grid > *, .case-grid > *, .court-grid > *,
+.court-scene > *, .notes-workbench > *, .quick-tools > *,
+.selector-row > *, .selector-field { min-width: 0; max-width: 100%; }
+.selector-field { flex: 1 1 220px; }
+.selector-field select { width: 100%; min-width: 0; }
+.screen, .site-footer { overflow-wrap: anywhere; }
+.topbar-inner, .screen-head, .quiz-footer, .daily-top { flex-wrap: wrap; }
+.top-actions { min-width: 0; }
+.compare-table { table-layout: fixed; }
+.hero { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+@media (min-width: 621px) and (max-height: 800px) {
+  main { padding-top: 24px; padding-bottom: 24px; }
+  .hero { min-height: 230px; }
+  .hero-copy { padding: 12px 0; }
+  .hero h1 { font-size: clamp(38px, 5vw, 56px); margin: 14px 0; }
+  .art-symbol { font-size: 130px; }
+  .mode-card, .mode-card:nth-child(n) { min-height: 200px; }
+}
 @media (max-width: 900px) {
   .mode-grid { grid-template-columns: repeat(3, 1fr); }
   .mode-card, .mode-card:nth-child(n) { padding: 20px; min-height: 230px; }
@@ -72,7 +91,7 @@ select, textarea { max-width: 100%; font-size: 16px; }
   .brand-mark { width: 34px; height: 38px; flex-basis: 34px; }
   .brand strong { font-size: 13px; letter-spacing: .02em; }
   .top-button { font-size: 12px; padding: 8px; }
-  .hero { min-height: auto; grid-template-columns: 1fr 90px; gap: 16px; }
+  .hero { min-height: auto; grid-template-columns: minmax(0, 1fr) 74px; gap: 12px; }
   .hero-copy { padding: 12px 0; }
   .hero h1 { font-size: clamp(32px, 8.4vw, 48px); margin: 18px 0; }
   .hero p { font-size: 12px; }
@@ -87,8 +106,8 @@ select, textarea { max-width: 100%; font-size: 16px; }
   .mode-card, .mode-card:nth-child(n) { min-height: 142px; padding: 18px 20px; border-right: 0; border-bottom: 1px solid var(--line); }
   .mode-card:last-child { border-bottom: 0; }
   .mode-card h2 { margin: 10px 0 6px; font-size: 22px; }
-  .mode-card p { font-size: 12px; max-width: 75%; }
-  .mode-enter { left: auto; right: 16px; bottom: 20px; font-size: 10px; }
+  .mode-card p { font-size: 12px; max-width: 100%; }
+  .mode-enter { position: static; display: block; margin-top: 12px; font-size: 10px; }
   .quick-tools { gap: 16px; }
   .quick-tools button { flex-direction: column; gap: 8px; font-size: 14px; }
   .site-footer { width: calc(100% - 32px); flex-direction: column; gap: 4px; }
