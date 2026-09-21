@@ -55,7 +55,8 @@ namespace EduAI.Court.Editor
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1280,720); scaler.matchWidthOrHeight = .5f;
             Text crosshair = TextNode(canvas.transform,"Crosshair","+",30);
-            Rect(crosshair.rectTransform,new Vector2(.5f,.5f),new Vector2(40,40),Vector2.zero);
+            Rect(crosshair.rectTransform,new Vector2(.5f,.5f),new Vector2(64,64),Vector2.zero);
+            crosshair.verticalOverflow = VerticalWrapMode.Overflow;
             Text prompt = TextNode(canvas.transform,"InteractionPrompt","",23);
             Rect(prompt.rectTransform,new Vector2(.5f,.43f),new Vector2(650,44),Vector2.zero);
             Text message = TextNode(canvas.transform,"Message","",22);
@@ -190,6 +191,17 @@ namespace EduAI.Court.Editor
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions { scenes = new[] {ScenePath},
                 locationPathName = "Builds/WebGL", target = BuildTarget.WebGL, options = BuildOptions.None });
             if (report.summary.result != BuildResult.Succeeded) throw new Exception("WebGL build failed.");
+        }
+        [MenuItem("EduAI/Apply Crosshair Layout Fix")]
+        public static void ApplyCrosshairLayoutFix()
+        {
+            // 有針對性的場景修正，不重建或刪除朋友修改過的場景物件。
+            EditorSceneManager.OpenScene(ScenePath);
+            var crosshair = GameObject.Find("Canvas/Crosshair").GetComponent<Text>();
+            Rect(crosshair.rectTransform, new Vector2(.5f, .5f), new Vector2(64, 64), Vector2.zero);
+            crosshair.verticalOverflow = VerticalWrapMode.Overflow;
+            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
+            CourtPreview.Capture();
         }
     }
 }

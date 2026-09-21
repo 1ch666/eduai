@@ -56,7 +56,7 @@ powershell -File .\court-game\tools\build.ps1 -Editor "C:\Program Files\Unity\Hu
 
 這會建立缺少的場景、測試並輸出 `court-game/Builds/WebGL/`。失敗看 `court-game/Logs/`；不要將授權檔或完整含敏感資料的紀錄推上 Git。
 
-**不要雙擊生成的 HTML 當作遊戲測試。** WebGL 必須透過 HTTP 伺服器開啟。沒有 Docker 的人可先請 AI 啟動只綁 `127.0.0.1` 的本機靜態伺服器，不要自動公開到外網。
+**不要雙擊生成的 HTML 當作遊戲測試。** WebGL 必須透過 HTTP 伺服器開啟。有 Node.js 的人可在倉庫根目錄執行 `node court-game/tools/serve.mjs`，再開 `http://127.0.0.1:8088/`；Ctrl+C 停止。它只提供 WebGL 成品、只綁本機，不會把整個倉庫公開。先成功建置才會有成品可提供。
 
 ## 5. Docker 與部署
 

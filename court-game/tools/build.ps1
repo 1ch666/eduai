@@ -11,9 +11,12 @@ $logDirectory = Join-Path $project 'Logs'
 New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
 function Invoke-CourtEditor([string] $Method, [string] $LogName) {
     $logPath = Join-Path $logDirectory $LogName
-    $editorArguments = @('-batchmode', '-nographics', '-quit', '-projectPath', ('"' + $project + '"'),
+    $editorArguments = @('-batchmode', '-nographics', '-projectPath', ('"' + $project + '"'),
         '-buildTarget', 'WebGL', '-executeMethod', $Method, '-logFile', ('"' + $logPath + '"'))
-    $process = Start-Process -FilePath $editorPath -ArgumentList $editorArguments -WindowStyle Hidden -PassThru -Wait
+    if ($Method -ne 'EduAI.Court.Editor.CourtPlayTests.Run') { $editorArguments += '-quit' }
+    $process = Start-Process -FilePath $editorPath -ArgumentList $editorArguments -WindowStyle Hidden -PassThru
+    # 只等待 Editor；Start-Process -Wait 在 Windows 也會等待持續運行的授權子程序。
+    $process.WaitForExit()
     if ($process.ExitCode -ne 0) { throw "Unity 結束碼 $($process.ExitCode)。請查 $logPath" }
 }
 # 不覆寫已存在的場景；錯誤會立即停止，不發布半成品。
@@ -23,6 +26,9 @@ if (-not (Test-Path -LiteralPath (Join-Path $project 'Assets/Scenes/Courtroom.un
 Invoke-CourtEditor 'EduAI.Court.Editor.CourtSmokeTests.Run' 'smoke-tests.log'
 $smokeLog = Get-Content -LiteralPath (Join-Path $logDirectory 'smoke-tests.log') -Raw
 if (-not $smokeLog.Contains('COURT_SMOKE_TESTS_PASSED')) { throw '未找到 Unity 流程測試通過標記。' }
+Invoke-CourtEditor 'EduAI.Court.Editor.CourtPlayTests.Run' 'play-tests.log'
+$playLog = Get-Content -LiteralPath (Join-Path $logDirectory 'play-tests.log') -Raw
+if (-not $playLog.Contains('COURT_PLAY_TESTS_PASSED')) { throw '未找到 Unity Play 測試通過標記。' }
 Invoke-CourtEditor 'EduAI.Court.Editor.CourtProjectBuilder.BuildWebGL' 'webgl-build.log'
 if (-not (Test-Path -LiteralPath (Join-Path $project 'Builds/WebGL/index.html'))) { throw '缺少 WebGL index.html。' }
 Write-Output 'Unity 場景與流程測試、WebGL 建置完成。仍需以 HTTP 實測遊玩後才可發布。'

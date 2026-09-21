@@ -1,5 +1,18 @@
 # 進度檢查點 — 2026-09-21
 
+## 最新驗證結果（優先於下方歷史紀錄）
+
+- Unity 6000.3.24f1 Editor 與官方 Web Build Support 均安裝成功，安裝結束碼 0；使用者已啟用 Unity Personal，實際 Editor 可解析授權。
+- 移除不存在的 inputlegacy／textrendering 套件宣告後，C# 已在真正 Editor 編譯。場景 `Assets/Scenes/Courtroom.unity` 已生成，`COURT_SCENE_VALIDATION_PASSED`，Editor 結束碼 0。
+- `CourtSmokeTests` 通過（選項邊界、回呼一次、答錯／完成／重玩），結束碼 0。
+- `CourtPlayTests` 已進入真實 Play 並通過（地板／牆／桌碰撞、證物射線、牆壁遮擋、按鈕高亮和持久事件），結束碼 0。這不是手動鍵鼠／瀏覽器操作驗收。
+- Play 啟動另有 UnityEditor.Search.SearchDatabase 的內部 ArgumentOutOfRangeException，重跑仍出現；測試斷言通過，但不可宣稱 Editor 完全零例外。未修改 Unity 安裝檔或忽略遊戲腳本錯誤。
+- 真實圖形渲染截圖 `Logs/court-preview.png` 已檢視，中文正常；發現並修正準星文字框裁切，重拍後準星正常。截圖與日誌不進 Git。
+- WebGL 首次建置進行中；尚未產出並驗證成品。線上入口與 Docker 仍是舊空白頁。建置成功後必須瀏覽器實测、部署、更新 Docker 與交接文件。
+- 新增 `tools/serve.mjs`：Node.js 本機靜態預覽，僅綁 127.0.0.1:8088，僅服務 Builds/WebGL，拒絕路徑逃逸與非 GET/HEAD。`tools/build.ps1` 已改為只等待 Editor 程序，避免 Windows 等待常駐授權子程序。
+
+## 先前進度與環境紀錄
+
 最新範圍：使用者要求繼續完成 3D 遊戲，真正遊戲部署後更新 Docker，並提供無經驗朋友可使用的 AI 接手文件。session 與 AI 仍留給後端。成功建置、實測後才替換 /play/ 空白入口。
 
 ## 本輪進度（原始碼已寫，Unity 尚未編譯）
