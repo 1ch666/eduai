@@ -19,7 +19,7 @@ WebGL 以未壓縮模式輸出 `Builds/WebGL`，便於一般靜態伺服器正�
 
 ## Docker
 
-**最新變更：使用者已同意先上線空白頁。** Docker 現在預設提供倉庫 `play/` 的相同空白入口，不代表 Unity 已編譯。從 `court-game/` 執行 `docker compose up --build -d`；從倉庫根目錄執行 `docker build -f court-game/Dockerfile -t eduai-court:prototype .`。本機尚無 Docker，因此設定尚未實際 build/run。
+**最新變更：使用者已同意先上線空白頁。** Docker 現在預設提供倉庫 `play/` 的相同空白入口，不代表 Unity 已編譯。從 `court-game/` 執行 `docker compose up --build -d`；從倉庫根目錄執行 `docker build -f court-game/Dockerfile -t eduai-court:prototype .`。本機尚無 Docker，但 GitHub Actions 已實際 build/run 通過，結果與下載位置見 STATUS.md。
 
 後續真實 WebGL 產出後，從倉庫根目錄改用：
 
