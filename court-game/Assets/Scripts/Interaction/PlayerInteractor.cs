@@ -20,7 +20,7 @@ namespace EduAI.Court
             if (!viewCamera || !ui) return;
             IInteractable next = null;
             MonoBehaviour component = null;
-            if (Cursor.lockState == CursorLockMode.Locked && (!choices || !choices.IsOpen))
+            if (FirstPersonController.InputActive && (!choices || !choices.IsOpen))
             {
                 Ray ray = viewCamera.ViewportPointToRay(new Vector3(.5f, .5f, 0));
                 if (Physics.Raycast(ray, out RaycastHit hit, distance, layers, QueryTriggerInteraction.Ignore))

@@ -29,7 +29,7 @@ namespace EduAI.Court
         public void Close() { IsOpen = false; onSelected = null; if (panel) panel.SetActive(false); }
         private void Update()
         {
-            if (!IsOpen || Cursor.lockState != CursorLockMode.Locked) return;
+            if (!IsOpen || !FirstPersonController.InputActive) return;
             if (Input.GetKeyDown(KeyCode.Alpha1)) Choose(0);
             else if (Input.GetKeyDown(KeyCode.Alpha2)) Choose(1);
             else if (Input.GetKeyDown(KeyCode.Alpha3)) Choose(2);

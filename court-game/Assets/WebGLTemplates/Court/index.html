@@ -24,7 +24,7 @@
   </style>
 </head>
 <body>
-  <header><span>模擬法庭 · 教學原型</span><a href="https://1ch666.github.io/eduai/">返回學堂</a></header>
+  <header><span>模擬法庭 · 教學原型</span><span id="input-mode" role="status"></span><a href="https://1ch666.github.io/eduai/">返回學堂</a></header>
   <main>
     <canvas id="game" width="1280" height="720" tabindex="0" aria-label="3D 法庭；WASD 移動、滑鼠轉向、E 互動、1 到 4 作答"></canvas>
     <section id="cover" aria-label="開始遊戲">
@@ -48,6 +48,26 @@
     const error = document.getElementById('error');
     const cover = document.getElementById('cover');
     let ready = false;
+    let unityInstance;
+    let fallbackRequested = false;
+    function useDragLook() {
+      if (fallbackRequested) return;
+      fallbackRequested = true;
+      document.getElementById('input-mode').textContent = '相容模式：按住左鍵拖曳視角';
+      if (unityInstance) unityInstance.SendMessage('Player', 'EnableDragLook');
+    }
+    // 部分內嵌瀏覽器拒絕 Pointer Lock。僅捕捉此 API 的拒絕，不能吞掉其他遊戲錯誤。
+    const nativePointerLock = canvas.requestPointerLock?.bind(canvas);
+    canvas.requestPointerLock = (...args) => {
+      if (fallbackRequested) return;
+      try {
+        if (!nativePointerLock) { Promise.resolve().then(useDragLook); return; }
+        const request = nativePointerLock(...args);
+        if (request?.catch) return request.catch(useDragLook);
+        return request;
+      } catch { Promise.resolve().then(useDragLook); }
+    };
+    document.addEventListener('pointerlockerror', useDragLook);
     function fail() {
       error.textContent = '遊戲載入失敗。請確認網路及 WebGL 支援，重新整理後再試。';
       error.hidden = false;
@@ -76,7 +96,9 @@
           streamingAssetsUrl: 'StreamingAssets',
           companyName: 'EduAI', productName: 'EduAI Court', productVersion: '0.1.0',
           devicePixelRatio: Math.min(window.devicePixelRatio || 1, 1.5)
-        }, value => { progress.value = value; }).then(() => {
+        }, value => { progress.value = value; }).then(instance => {
+          unityInstance = instance;
+          if (fallbackRequested) unityInstance.SendMessage('Player', 'EnableDragLook');
           ready = true;
           progress.hidden = true;
           start.disabled = false;

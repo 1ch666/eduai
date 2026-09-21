@@ -2,6 +2,16 @@
 
 ## 最新驗證結果（優先於下方歷史紀錄）
 
+### 額度保護檢查點：使用者要求剩 4% 時先推送
+
+第一份 WebGL 已真正建置成功（build.ps1 結束碼 0），HTML／WASM HTTP 200 且 MIME 正確，本機瀏覽器成功顯示法庭、中文、準星。但 Codex 內嵌瀏覽器拒絕 Pointer Lock，出現 Chromium UnknownError，因此沒有發布此有操作問題的第一份成品。
+
+已修正：Web 模板只攔截 requestPointerLock 的拒絕，改呼叫 Player.EnableDragLook；相容模式保留 WASD／E／1234，按住左鍵拖曳轉向、Esc 暫停。正常支援 Pointer Lock 的瀏覽器仍維持原操作。新增 tools/test-template.mjs，成功／拒絕／API 不存在三種測試皆通過。Unity 場景、流程、Play 測試也再次通過。
+
+**第二份 WebGL 尚在 wasm-opt 最佳化，不可假稱新版已完成。** 建置由本機 PowerShell 程序執行，日誌 `court-game/Logs/webgl-build.log`；接手先查程序及日誌，勿同時重開 Unity。`tools/serve.mjs` 本機預覽仍在 127.0.0.1:8088。確認新 build 結束碼 0 後，重新整理瀏覽器並重测載入、相容模式、走動、互動與作答。模板測試只是 JS 單元測試，不取代瀏覽器驗收。
+
+下一步：驗證相容版 → 將 Builds/WebGL 成品部署到 play/ → 推 1ch666/eduai → 線上驗證 → 更新 Docker 工作流程／映像並測試 → 更新本文件與新手交接。**線上和 Docker 目前仍是舊空白入口。** 請勿重新下載 Unity 或重做免費授權，這兩項已完成。
+
 - Unity 6000.3.24f1 Editor 與官方 Web Build Support 均安裝成功，安裝結束碼 0；使用者已啟用 Unity Personal，實際 Editor 可解析授權。
 - 移除不存在的 inputlegacy／textrendering 套件宣告後，C# 已在真正 Editor 編譯。場景 `Assets/Scenes/Courtroom.unity` 已生成，`COURT_SCENE_VALIDATION_PASSED`，Editor 結束碼 0。
 - `CourtSmokeTests` 通過（選項邊界、回呼一次、答錯／完成／重玩），結束碼 0。

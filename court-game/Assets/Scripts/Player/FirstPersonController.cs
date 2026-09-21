@@ -13,11 +13,16 @@ namespace EduAI.Court
         private CharacterController controller;
         private float verticalSpeed;
         private float pitch;
-        public bool IsCaptured => Cursor.lockState == CursorLockMode.Locked;
+        private bool dragLook;
+        private bool dragLookActive;
+        public static FirstPersonController Active { get; private set; }
+        public static bool InputActive => Active && Active.IsCaptured;
+        public bool IsCaptured => dragLook ? dragLookActive : Cursor.lockState == CursorLockMode.Locked;
 
         public void Configure(Camera camera) { viewCamera = camera; }
         private void Awake()
         {
+            Active = this;
             controller = GetComponent<CharacterController>();
             if (!viewCamera) viewCamera = GetComponentInChildren<Camera>();
         }
@@ -31,11 +36,21 @@ namespace EduAI.Court
         }
         public void Capture(bool capture)
         {
-            Cursor.lockState = capture ? CursorLockMode.Locked : CursorLockMode.None;
-            Cursor.visible = !capture;
+            dragLookActive = capture;
+            Cursor.lockState = capture && !dragLook ? CursorLockMode.Locked : CursorLockMode.None;
+            Cursor.visible = dragLook || !capture;
+        }
+        // Web 模板只在瀏覽器拒絕 Pointer Lock 時呼叫；不繞過瀏覽器權限。
+        public void EnableDragLook()
+        {
+            dragLook = true;
+            Capture(true);
+            Input.ResetInputAxes();
+            var hud = FindFirstObjectByType<InteractionUI>();
+            if (hud) hud.ShowMessage("相容模式：按住滑鼠左鍵拖曳視角。\nWASD 移動、E 互動、1–4 作答不變。Esc 暫停。", 15);
         }
         private void OnApplicationFocus(bool focused) { if (!focused) Capture(false); }
-        private void OnDisable() { Capture(false); }
+        private void OnDisable() { Capture(false); if (Active == this) Active = null; }
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.Escape)) { Capture(false); return; }
@@ -46,9 +61,12 @@ namespace EduAI.Court
                 return;
             }
             if (!viewCamera || !controller) return;
-            pitch = Mathf.Clamp(pitch - Input.GetAxisRaw("Mouse Y") * mouseSensitivity, -85f, 85f);
-            viewCamera.transform.localRotation = Quaternion.Euler(pitch, 0, 0);
-            transform.Rotate(0, Input.GetAxisRaw("Mouse X") * mouseSensitivity, 0);
+            if (!dragLook || Input.GetMouseButton(0))
+            {
+                pitch = Mathf.Clamp(pitch - Input.GetAxisRaw("Mouse Y") * mouseSensitivity, -85f, 85f);
+                viewCamera.transform.localRotation = Quaternion.Euler(pitch, 0, 0);
+                transform.Rotate(0, Input.GetAxisRaw("Mouse X") * mouseSensitivity, 0);
+            }
             Vector2 input = Vector2.ClampMagnitude(new Vector2(
                 (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0),
                 (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0)), 1);
