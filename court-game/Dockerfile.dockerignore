@@ -1,0 +1,9 @@
+**
+!play/
+!play/**
+!court-game/
+!court-game/docker/
+!court-game/docker/nginx.conf
+!court-game/Builds/
+!court-game/Builds/WebGL/
+!court-game/Builds/WebGL/**

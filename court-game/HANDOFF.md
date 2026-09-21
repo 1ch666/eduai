@@ -19,7 +19,18 @@ WebGL 以未壓縮模式輸出 `Builds/WebGL`，便於一般靜態伺服器正�
 
 ## Docker
 
-先完成 Unity WebGL build，再於本目錄執行：
+**最新變更：使用者已同意先上線空白頁。** Docker 現在預設提供倉庫 `play/` 的相同空白入口，不代表 Unity 已編譯。從 `court-game/` 執行 `docker compose up --build -d`；從倉庫根目錄執行 `docker build -f court-game/Dockerfile -t eduai-court:prototype .`。本機尚無 Docker，因此設定尚未實際 build/run。
+
+後續真實 WebGL 產出後，從倉庫根目錄改用：
+
+```sh
+docker build -f court-game/Dockerfile --build-arg WEB_ROOT=court-game/Builds/WebGL -t eduai-court:prototype .
+docker save -o eduai-court-image.tar eduai-court:prototype
+```
+
+以下為先前 WebGL 階段交接記錄；以本節上方的新指令為準：
+
+先完成 Unity WebGL build 才能交付可玩遊戲；空白入口不需要 Unity。
 
 ```sh
 docker compose up --build -d
@@ -28,7 +39,7 @@ docker build -t eduai-court:prototype .
 docker save -o eduai-court-image.tar eduai-court:prototype
 ```
 
-Docker 只提供編譯後遊戲，不能用來開啟 C# 原始碼遊玩。若缺少 index.html 或 WASM，建置會失敗，不以空白頁冒充成功。來源交接 zip 不是已建好的 Docker image；image tar 需完成以上指令才會產生。
+Docker 提供靜態檔案，不能用來開啟 C# 原始碼遊玩。若缺少 index.html，建置會失敗。來源交接 zip 不是已建好的 Docker image；image tar 需完成 build/save 才會產生。替換為 Unity 輸出時，務必另外驗證 WASM 與實際遊玩。
 
 服務預設只綁本機、非 root、唯讀檔案系統。後端人員自行在部署環境加 HTTPS 與網路入口；正式環境應固定 nginx image digest。無付費服務設定。
 

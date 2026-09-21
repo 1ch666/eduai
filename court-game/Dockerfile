@@ -1,9 +1,10 @@
 FROM nginx:stable-alpine
-COPY docker/nginx.conf /etc/nginx/nginx.conf
-COPY --chown=nginx:nginx Builds/WebGL/ /usr/share/nginx/html/
-# Fail honestly if Unity has not produced a playable build.
-RUN test -s /usr/share/nginx/html/index.html && \
-    find /usr/share/nginx/html/Build -name '*.wasm' | grep -q .
+# Build context is the repository root. Default: explicitly approved blank entry.
+# Later: --build-arg WEB_ROOT=court-game/Builds/WebGL
+ARG WEB_ROOT=play
+COPY court-game/docker/nginx.conf /etc/nginx/nginx.conf
+COPY --chown=nginx:nginx ${WEB_ROOT}/ /usr/share/nginx/html/
+RUN test -s /usr/share/nginx/html/index.html
 USER nginx
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \

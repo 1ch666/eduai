@@ -1,6 +1,8 @@
 services:
   court:
-    build: .
+    build:
+      context: ..
+      dockerfile: court-game/Dockerfile
     ports:
       - "127.0.0.1:8080:8080"
     read_only: true
