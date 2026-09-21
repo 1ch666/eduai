@@ -1,0 +1,14 @@
+/Library/
+/Temp/
+/Logs/
+/obj/
+/Build/
+/Builds/
+/UserSettings/
+/.vs/
+*.csproj
+*.sln
+*.slnx
+*.user
+*.log
+.DS_Store
