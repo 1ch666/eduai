@@ -1,6 +1,6 @@
 FROM nginx:stable-alpine
-# Build context is the repository root. Default: explicitly approved blank entry.
-# Later: --build-arg WEB_ROOT=court-game/Builds/WebGL
+# Build context is the repository root. Default: deployed WebGL output in play/.
+# To package an un-deployed local build, pass --build-arg WEB_ROOT=court-game/Builds/WebGL.
 ARG WEB_ROOT=play
 COPY court-game/docker/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=nginx:nginx ${WEB_ROOT}/ /usr/share/nginx/html/

@@ -19,7 +19,7 @@ WebGL 以未壓縮模式輸出 `Builds/WebGL`，便於一般靜態伺服器正�
 
 ## Docker
 
-**真正遊戲部署後，必須重建並測試 Docker。** 目前 Docker 預設提供倉庫 `play/` 的空白入口，不代表 Unity 已編譯。從 `court-game/` 執行 `docker compose up --build -d`；從倉庫根目錄執行 `docker build -f court-game/Dockerfile -t eduai-court:prototype .`。本機尚無 Docker，但早期空白入口的 GitHub Actions 已實際 build/run 通過，結果與下載位置見 STATUS.md。不得將舊映像標示為新遊戲；新映像必須記錄與線上版本一致的來源 commit 及 SHA256。
+**Docker 已改為預設提供倉庫 `play/` 的 WebGL 遊戲。** 每次遊戲部署後都必須重新執行 `Court Docker handoff`，確認產物與 GitHub Pages 使用相同 commit。從 `court-game/` 執行 `docker compose up --build -d`；從倉庫根目錄執行 `docker build -f court-game/Dockerfile -t eduai-court:prototype .`。工作流程會檢查首頁、WASM MIME、資料檔、healthz、API 501、非 root 與唯讀檔案系統。下載的映像要記錄來源 commit 和 SHA256；舊空白頁映像不可當作新版遊戲。
 
 後續真實 WebGL 產出後，從倉庫根目錄改用：
 
@@ -37,7 +37,7 @@ docker load -i eduai-court-preview.tar.gz
 docker run --rm --read-only --tmpfs /tmp:size=32m,mode=1777 --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8080:8080 eduai-court:preview
 ```
 
-開啟 http://localhost:8080/ 。這個映像只有已部署的空白入口，不包含可玩的 Unity 場景。
+開啟 http://localhost:8080/ 。這個映像提供已提交的 WebGL 遊戲；它仍不包含後端 session 或 AI。
 
 Docker 提供靜態檔案，不能用來開啟 C# 原始碼遊玩。若缺少 index.html，建置會失敗。來源交接 zip 不是已建好的 Docker image；image tar 需完成 build/save 才會產生。替換為 Unity 輸出時，務必另外驗證 WASM 與實際遊玩。
 

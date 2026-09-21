@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Build and verify blank entry container
+      - name: Build and verify WebGL container
         shell: bash
         run: |
           set -euo pipefail
@@ -25,6 +25,8 @@ jobs:
           curl --retry 10 --retry-connrefused --retry-delay 1 --fail http://127.0.0.1:8080/healthz
           curl --fail http://127.0.0.1:8080/ -o /tmp/court.html
           cmp play/index.html /tmp/court.html
+          curl -sI http://127.0.0.1:8080/Build/WebGL.wasm | grep -qi '^Content-Type: application/wasm'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/Build/WebGL.data)" = 200
           test "$(curl -s -o /tmp/api.json -w '%{http_code}' http://127.0.0.1:8080/api/ai/ask)" = 501
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/missing)" = 404
           test "$(docker exec court-check id -u)" != 0
