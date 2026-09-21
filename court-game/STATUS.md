@@ -13,7 +13,17 @@
 
 已通過：模板 JavaScript 語法、manifest.json 解析、build.ps1 PowerShell 語法、git diff --check。這不等於 Unity 編譯或遊玩驗證。
 
-## 阻擋：需使用者完成 Windows 安裝授權
+## 最新環境更新：Editor 已安裝，需啟用 Unity 帳號授權
+
+使用者回覆「允許」後，直接啟動已驗證的官方安裝檔，經正常 Windows UAC 安裝成功，結束碼 0。Unity CLI editors -i 已列出 6000.3.24f1，路徑為 `C:\Users\user\Documents\Codex\2026-09-01\new-chat\tools\UnityEditors\6000.3.24f1\Editor\Unity.exe`。
+
+首次實際 batch 啟動專案結束碼 **198**，`Logs/create-scene.log` 明確顯示 `No valid Unity Editor license found. Please activate your license.` 尚未進入 C# 編譯，Courtroom.unity 未生成。需要使用者在 Unity Hub 登入自己的帳號、確認免費資格並啟用 Personal 授權；不要選付費方案或把帳密交給 AI。
+
+Unity CLI 的模組清單為空，故改從官方版本頁提供的 Windows Web Build Support 下載連結下載相同版本模組；約 886.7 MiB，尚未下載／安裝完成。目標檔案在工作區 `tools/UnitySetup-WebGL-Support-for-Editor-6000.3.24f1.exe`。接手前先確認下載是否完成及數位簽章有效，不能執行不完整安裝檔。Editor 安裝成功不代表 WebGL 支援已就緒。
+
+線上 /play/ 與 Docker 仍是原空白入口。啟用授權及裝好模組後才可繼續 build.ps1、實測、部署和重建 Docker。
+
+## 先前安裝問題（已由直接執行官方安裝檔解決）
 
 UnitySetup64-6000.3.24f1.exe 已下載（4,127,507,400 bytes）；數位簽章 Valid，Unity Technologies SF。首次 Program Files 安裝失敗；官方 --no-elevate 模式回 ELEVATION_REQUIRED。改用可寫入目錄仍回報：`The Windows elevation prompt was cancelled or timed out.` 未繞過授權或改安全設定。
 
