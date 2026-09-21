@@ -15,6 +15,8 @@ namespace EduAI.Court
         { viewCamera = camera; ui = hud; choices = choiceSystem; }
         private void Update()
         {
+            // 最近命中的 collider 若不是 IInteractable，互動就停止：避免隔牆使用物件。
+            // 選項開啟或滑鼠解鎖時暫停射線互動，但不隱藏中央準星。
             if (!viewCamera || !ui) return;
             IInteractable next = null;
             MonoBehaviour component = null;

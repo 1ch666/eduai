@@ -176,6 +176,8 @@ namespace EduAI.Court.Editor
         }
         public static void BuildWebGL()
         {
+            // 部署優先：必須先成功輸出 Builds/WebGL，再測瀏覽器及 Docker。
+            // 不要將 Unity Assets 當成網站成品；API key 不得進入這個建置。
             ValidateScene();
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions { scenes = new[] {ScenePath},
                 locationPathName = "Builds/WebGL", target = BuildTarget.WebGL, options = BuildOptions.None });
