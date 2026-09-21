@@ -28,16 +28,16 @@ docker build -f court-game/Dockerfile --build-arg WEB_ROOT=court-game/Builds/Web
 docker save -o eduai-court-image.tar eduai-court:prototype
 ```
 
-以下為先前 WebGL 階段交接記錄；以本節上方的新指令為準：
+先完成 Unity WebGL build 才能交付可玩遊戲；空白入口不需要 Unity。倉庫另附手動執行的 `Court Docker handoff` 工作流程，僅在公開倉庫使用標準 runner 建置、檢查及匯出映像；下載檔保存 1 天，請及時保存。
 
-先完成 Unity WebGL build 才能交付可玩遊戲；空白入口不需要 Unity。
+下載 `eduai-court-preview.tar.gz` 後：
 
 ```sh
-docker compose up --build -d
-# http://localhost:8080
-docker build -t eduai-court:prototype .
-docker save -o eduai-court-image.tar eduai-court:prototype
+docker load -i eduai-court-preview.tar.gz
+docker run --rm --read-only --tmpfs /tmp:size=32m,mode=1777 --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8080:8080 eduai-court:preview
 ```
+
+開啟 http://localhost:8080/ 。這個映像只有已部署的空白入口，不包含可玩的 Unity 場景。
 
 Docker 提供靜態檔案，不能用來開啟 C# 原始碼遊玩。若缺少 index.html，建置會失敗。來源交接 zip 不是已建好的 Docker image；image tar 需完成 build/save 才會產生。替換為 Unity 輸出時，務必另外驗證 WASM 與實際遊玩。
 

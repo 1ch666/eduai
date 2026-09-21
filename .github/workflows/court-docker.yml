@@ -1,0 +1,42 @@
+name: Court Docker handoff
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    # Public repository + standard runner only; never use a paid larger runner.
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Build and verify blank entry container
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f court-game/compose.yaml config --quiet
+          docker build -f court-game/Dockerfile -t eduai-court:preview .
+          docker run --rm eduai-court:preview nginx -t
+          docker run -d --name court-check --read-only --tmpfs /tmp:size=32m,mode=1777 --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8080:8080 eduai-court:preview
+          trap 'docker logs court-check; docker rm -f court-check' EXIT
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail http://127.0.0.1:8080/healthz
+          curl --fail http://127.0.0.1:8080/ -o /tmp/court.html
+          cmp play/index.html /tmp/court.html
+          test "$(curl -s -o /tmp/api.json -w '%{http_code}' http://127.0.0.1:8080/api/ai/ask)" = 501
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/missing)" = 404
+          test "$(docker exec court-check id -u)" != 0
+          curl -sI http://127.0.0.1:8080/ | grep -qi 'X-Content-Type-Options: nosniff'
+          test "$(docker inspect --format '{{.HostConfig.ReadonlyRootfs}}' court-check)" = true
+          mkdir -p handoff
+          docker save eduai-court:preview | gzip > handoff/eduai-court-preview.tar.gz
+          cd handoff
+          sha256sum eduai-court-preview.tar.gz > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: eduai-court-docker
+          path: handoff/
+          retention-days: 1
+          compression-level: 0
