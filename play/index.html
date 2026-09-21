@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,follow">
+  <meta name="theme-color" content="#f7f8f7">
+  <title>模擬法庭｜遊戲開發預覽</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f7f8f7; color: #343639; font: 15px/1.6 system-ui, sans-serif; }
+    header { min-height: 60px; padding: 14px 20px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; border-bottom: 1px solid #d9ddda; }
+    a { color: inherit; text-underline-offset: 4px; }
+    a:focus-visible { outline: 3px solid #4d606b; outline-offset: 4px; }
+    main { min-height: calc(100svh - 70px); }
+    .status { margin: 0; padding: 12px 20px; color: #4d606b; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header><span>模擬法庭</span><a href="../">返回公民法律研究室</a></header>
+  <main id="game-root" aria-label="3D 法庭遊戲預留區">
+    <p class="status" role="status">3D 場景製作中</p>
+    <!--
+    給接手 AI／開發者：本頁是使用者明確要求先部署的空白遊戲入口，不是已完成的遊戲。
+    公開路徑：https://1ch666.github.io/eduai/play/
+    模擬法庭的「開始遊玩」按鈕指向此頁。請保留此路徑，將真正的 WebGL 嵌入 game-root。
+    先讀 ../court-game/AGENTS.md、STATUS.md、HANDOFF.md。Unity 原始碼在 court-game/。
+
+    製作需求（簡單 Prototype，勿擴充付費資產）：
+    1. Unity 6 穩定版；獨立 Courtroom 場景。Primitive 製作地板、四面牆、法官桌椅、
+       辯護桌、檢察官桌、證人席、旁聽區。桌牆有 Collider，玩家不能穿過。
+    2. Player + CharacterController + Camera；第一人稱 WASD、Mouse Look、重力、
+       Space 跳躍。沒有武器。Esc 解鎖；WebGL 按瀏覽器規則以使用者點擊恢復指標鎖定。
+    3. Canvas 中央永久十字準星；Camera.ViewportPointToRay(0.5,0.5,0)，
+       3m Physics.Raycast。只對準可互動物件時顯示 [E] 提示，離開隱藏，不可隔牆互動。
+    4. 用 IInteractable.GetInteractionText()/Interact() 共用射線互動；別把功能全部塞進 PlayerInteractor。
+    5. 真正 3D 開庭按鈕：Mesh、Collider、World Space Canvas「開庭」，對準高亮，移開還原。
+    6. 五個 Capsule NPC：法官、檢察官、辯護律師、被告、證人，頭上顯示中文名字。
+       E 交談先顯示假資料；法官說「現在開始模擬法庭程序」。
+    7. 畫面下方 ChoicePanel：1 提出證物、2 詢問證人、3 查看案件、4 結束發言。
+       鍵盤 Alpha1–4，不用滑鼠按 UI；沒有選項時按鍵無作用，選後關閉，不蓋住準星。
+    8. 證物 A Cube：E 顯示「監視器截圖／取得時間：2026/09/21」，使用假資料即可。
+    9. C# 分開 Player、Interaction、NPC、UI；保留現有類別與可替換的流程架構。
+    10. AI 與 session 留給後端：預留 UnityWebRequest -> POST /api/ai/ask -> Worker -> Ollama。
+        API key 僅留伺服器，session cookie 由後端安全管理。不可修改既有 AI API 或放金鑰進 WebGL。
+    11. Build WebGL 並實测載入、中文、指標鎖定、E、1234、碰撞；不要只提交 C# 就聲稱已完成。
+        保留 court-game 的 Docker 交接方式；本頁是靜態入口，GitHub Pages 不會執行 Docker。
+    12. 只推 1ch666/eduai；保留其他未提交修改；免費服務；不破壞原網站。
+
+    接手口令：「讀取 court-game/AGENTS.md 與 play/index.html 註解，幫我繼續完成 3D 法庭。」
+    -->
+  </main>
+</body>
+</html>
