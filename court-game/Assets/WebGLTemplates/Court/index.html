@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,follow">
+  <meta name="theme-color" content="#333c40">
+  <title>模擬法庭｜3D 教學原型</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #eee; background: #242b2e; font: 15px/1.6 system-ui, sans-serif; }
+    header { min-height: 56px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 18px; }
+    a { color: inherit; text-underline-offset: 4px; }
+    button { font: inherit; color: #222; background: #e4e8e5; border: 1px solid #a9b3b0; padding: 10px 24px; cursor: pointer; }
+    :focus-visible { outline: 3px solid #dfd591; outline-offset: 3px; }
+    main { position: relative; height: calc(100svh - 72px); min-height: 320px; }
+    canvas { display: block; width: 100%; height: 100%; background: #333c40; }
+    #cover { position: absolute; inset: 0; display: grid; place-content: center; padding: 24px; text-align: center; background: #333c40; }
+    #cover[hidden] { display: none; }
+    h1 { margin: 0 0 12px; font-size: 28px; font-weight: 500; }
+    p { max-width: 42em; }
+    #progress { width: 100%; height: 8px; accent-color: #b5c4bc; }
+    #error { color: #ffe2ae; }
+  </style>
+</head>
+<body>
+  <header><span>模擬法庭 · 教學原型</span><a href="https://1ch666.github.io/eduai/">返回學堂</a></header>
+  <main>
+    <canvas id="game" width="1280" height="720" tabindex="0" aria-label="3D 法庭；WASD 移動、滑鼠轉向、E 互動、1 到 4 作答"></canvas>
+    <section id="cover" aria-label="開始遊戲">
+      <h1>消失的平板</h1>
+      <p>查看證物，詢問證人，再回法官處作答。</p>
+      <p>需鍵盤與滑鼠：WASD 移動 · E 互動 · 1–4 選擇 · Esc 釋放滑鼠</p>
+      <button id="start" type="button">載入遊戲</button>
+      <p id="status" role="status">虛構情境，非法律意見。此版尚無手機觸控操作。</p>
+      <progress id="progress" value="0" max="1" hidden aria-label="遊戲載入進度"></progress>
+      <p id="error" role="alert" hidden></p>
+    </section>
+  </main>
+  <noscript>請啟用 JavaScript，並使用支援 WebGL 的瀏覽器。</noscript>
+  <!-- 接手請先讀 court-game/AGENTS.md、STATUS.md、HANDOFF.md。
+       這是 Unity 建置模板，不要手改部署後的生成檔。AI/session 由後端處理，禁止內嵌密鑰。 -->
+  <script>
+    const canvas = document.getElementById('game');
+    const start = document.getElementById('start');
+    const status = document.getElementById('status');
+    const progress = document.getElementById('progress');
+    const error = document.getElementById('error');
+    const cover = document.getElementById('cover');
+    let ready = false;
+    function fail() {
+      error.textContent = '遊戲載入失敗。請確認網路及 WebGL 支援，重新整理後再試。';
+      error.hidden = false;
+      progress.hidden = true;
+      status.textContent = '';
+      start.disabled = true;
+    }
+    start.addEventListener('click', () => {
+      if (ready) {
+        cover.hidden = true;
+        canvas.focus();
+        // 鎖定需新的使用者手勢；進入後再點擊 canvas，由 Unity 控制器處理。
+        return;
+      }
+      start.disabled = true;
+      progress.hidden = false;
+      status.textContent = '正在載入 3D 場景…';
+      const loader = document.createElement('script');
+      loader.src = 'Build/{{{ LOADER_FILENAME }}}';
+      loader.onerror = fail;
+      loader.onload = () => {
+        createUnityInstance(canvas, {
+          dataUrl: 'Build/{{{ DATA_FILENAME }}}',
+          frameworkUrl: 'Build/{{{ FRAMEWORK_FILENAME }}}',
+          codeUrl: 'Build/{{{ CODE_FILENAME }}}',
+          streamingAssetsUrl: 'StreamingAssets',
+          companyName: 'EduAI', productName: 'EduAI Court', productVersion: '0.1.0',
+          devicePixelRatio: Math.min(window.devicePixelRatio || 1, 1.5)
+        }, value => { progress.value = value; }).then(() => {
+          ready = true;
+          progress.hidden = true;
+          start.disabled = false;
+          start.textContent = '進入法庭';
+          status.textContent = '進入後點擊畫面，即可用滑鼠轉向。';
+        }).catch(fail);
+      };
+      document.body.appendChild(loader);
+    });
+  </script>
+</body>
+</html>

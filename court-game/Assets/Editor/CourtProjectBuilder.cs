@@ -95,10 +95,11 @@ namespace EduAI.Court.Editor
             Npc(root,"Defendant","被告",new Vector3(-5,1,4.8f),false,accent,ui,session);
             Npc(root,"Witness","證人",new Vector3(5,1,7.2f),false,accent,ui,session);
             var evidence = Block(root,"EvidenceA",new Vector3(-3,1.23f,1.7f),new Vector3(.4f,.25f,.4f),accent);
-            evidence.AddComponent<EvidenceInteractable>().Configure(ui);
+            evidence.AddComponent<EvidenceInteractable>().Configure(session);
             WorldLabel(evidence.transform,"證物 A",new Vector3(0,.7f,0));
             PlayerSettings.companyName = "EduAI"; PlayerSettings.productName = "EduAI Court";
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+            PlayerSettings.WebGL.template = "PROJECT:Court";
             // Legacy Input Manager uses built-in mouse axes; no paid controller package.
             var settings = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);
             var input = settings.FindProperty("activeInputHandler");
@@ -162,10 +163,17 @@ namespace EduAI.Court.Editor
                     throw new InvalidOperationException("Missing script: "+transform.name);
                 foreach (var behaviour in transform.GetComponents<MonoBehaviour>())
                 {
+                    // Unity UI 的材質等欄位允許留空；只檢查本專案直接序列化的引用。
+                    // UnityEvent 內的可選參數也不是必要的場景引用。
+                    if (!behaviour || behaviour.GetType().Namespace != "EduAI.Court") continue;
                     var iterator = new SerializedObject(behaviour).GetIterator();
-                    while (iterator.NextVisible(true))
+                    bool enterChildren = true;
+                    while (iterator.NextVisible(enterChildren))
+                    {
+                        enterChildren = false;
                         if (iterator.propertyType == SerializedPropertyType.ObjectReference && iterator.name != "m_Script" && iterator.objectReferenceValue == null)
                             throw new InvalidOperationException("Unassigned reference: "+transform.name+"."+iterator.name);
+                    }
                 }
             }
             if (!UnityEngine.Object.FindFirstObjectByType<FirstPersonController>() ||

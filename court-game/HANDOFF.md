@@ -4,7 +4,7 @@
 
 ## 本次範圍
 
-第一人稱 WASD、滑鼠轉向、跳躍、碰撞、中央準星、3 公尺 Raycast、E 互動、開庭按鈕、五位 NPC、證物 A 與鍵盤 1–4 選項。場景由 `Assets/Editor/CourtProjectBuilder.cs` 建立，互動邏輯分檔。無武器、無正式案件審理、無 AI、無 session 實作。
+第一人稱 WASD、滑鼠轉向、跳躍、碰撞、中央準星、3 公尺 Raycast、E 互動、開庭按鈕、五位 NPC、證物 A 與鍵盤 1–4 選項。新增虛構「消失的平板」調查、答錯提示、完成／重玩流程。場景由 `Assets/Editor/CourtProjectBuilder.cs` 建立，互動邏輯分檔。無武器、無正式案件審理、無 AI、無 session 實作。新手先看 START-HERE.md，實際驗證狀態見 STATUS.md。
 
 ## Unity
 
@@ -19,7 +19,7 @@ WebGL 以未壓縮模式輸出 `Builds/WebGL`，便於一般靜態伺服器正�
 
 ## Docker
 
-**最新變更：使用者已同意先上線空白頁。** Docker 現在預設提供倉庫 `play/` 的相同空白入口，不代表 Unity 已編譯。從 `court-game/` 執行 `docker compose up --build -d`；從倉庫根目錄執行 `docker build -f court-game/Dockerfile -t eduai-court:prototype .`。本機尚無 Docker，但 GitHub Actions 已實際 build/run 通過，結果與下載位置見 STATUS.md。
+**真正遊戲部署後，必須重建並測試 Docker。** 目前 Docker 預設提供倉庫 `play/` 的空白入口，不代表 Unity 已編譯。從 `court-game/` 執行 `docker compose up --build -d`；從倉庫根目錄執行 `docker build -f court-game/Dockerfile -t eduai-court:prototype .`。本機尚無 Docker，但早期空白入口的 GitHub Actions 已實際 build/run 通過，結果與下載位置見 STATUS.md。不得將舊映像標示為新遊戲；新映像必須記錄與線上版本一致的來源 commit 及 SHA256。
 
 後續真實 WebGL 產出後，從倉庫根目錄改用：
 
@@ -57,7 +57,8 @@ Docker 提供靜態檔案，不能用來開啟 C# 原始碼遊玩。若缺少 in
 - Unity 匯入及 C# 編譯無錯誤；場景無 missing scripts／未接 references。
 - Play：WASD、滑鼠、Space、撞牆／桌、Esc 解鎖／再捕捉。
 - 準星固定中央；E 提示只在 3m 內、無牆壁遮擋且準星對準物件時出現；離開取消高亮。
-- 開庭／法官顯示四選項；1–4 只在選项開啟時作用，選後關閉；其他 NPC 及證物顯示假資料。
+- 開庭／法官顯示四選項；1–4 只在選项開啟時作用，選後關閉；其他 NPC 及證物顯示虛構教學資料。
+- 查看證物並詢問證人後回法官處作答；答錯可再答，答對完成；重玩會清除本輪調查進度。
 - WebGL 編譯並以 HTTP 開啟測試；Docker build、healthz、WASM MIME type 與遊玩測試。
 
 這份清單是驗收要求，不代表上述測試已完成；實際執行狀態另見 STATUS.md。

@@ -14,7 +14,14 @@ namespace EduAI.Court
         public void Interact()
         {
             if (isJudge && session) session.BeginHearing();
-            else if (ui) ui.ShowMessage(displayName + "：這是模擬法庭互動測試，尚未串接 AI。");
+            else if (displayName == "證人" && session) session.HearWitness();
+            else if (ui)
+            {
+                string line = displayName == "檢察官" ? "指控也需要證據支持，請確認畫面實際拍到了什麼。"
+                    : displayName == "辯護律師" ? "請分清楚親眼看見的事實，與其他人的推測。"
+                    : "我有進教室，但這不能說明平板去了哪裡。";
+                ui.ShowMessage(displayName + "：" + line, 12);
+            }
         }
     }
 }

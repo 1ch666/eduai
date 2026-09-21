@@ -21,7 +21,14 @@ namespace EduAI.Court
             controller = GetComponent<CharacterController>();
             if (!viewCamera) viewCamera = GetComponentInChildren<Camera>();
         }
-        private void Start() { Capture(true); }
+        private void Start()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            Capture(false); // 網頁必須由玩家點擊後要求鎖定指標。
+#else
+            Capture(true);
+#endif
+        }
         public void Capture(bool capture)
         {
             Cursor.lockState = capture ? CursorLockMode.Locked : CursorLockMode.None;
@@ -31,7 +38,7 @@ namespace EduAI.Court
         private void OnDisable() { Capture(false); }
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Escape)) { Capture(!IsCaptured); return; }
+            if (Input.GetKeyDown(KeyCode.Escape)) { Capture(false); return; }
             // Browsers require a fresh user gesture to recapture the pointer.
             if (!IsCaptured)
             {

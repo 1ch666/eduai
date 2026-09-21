@@ -1,0 +1,92 @@
+# 朋友接手：先看這份
+
+這個資料夾是 Unity 3D 法庭遊戲，不是原本學堂網站的後端。你不必先懂全部程式；先確認能開啟，再一次改一項。
+
+**目前哪些真的通過測試，以 STATUS.md 為準。** 看到程式碼、網址或 Dockerfile，不代表遊戲已成功編譯。線上網址固定是 https://1ch666.github.io/eduai/play/ 。
+
+## 1. 先拿到專案
+
+安裝 Git，開終端機，在你想放專案的位置執行：
+
+```sh
+git clone https://github.com/1ch666/eduai.git
+cd eduai
+git status
+```
+
+已經有副本就不要重做 `git init`。更新前先 `git status`；若有未提交內容，先備份或提交自己的修改，不要讓 AI 執行 `git reset --hard`。沒有修改時可用 `git pull --ff-only`。
+
+## 2. 用 Unity 開啟
+
+1. 安裝免費 Unity Hub，用自己的帳號登入。由你確認符合免費 Personal 授權資格並完成授權；不要把帳密交給 AI。
+2. 安裝 Unity **6000.3.24f1**，勾選 **Web Build Support**。不同版本先不要擅自升級。
+3. Hub 選「Add／加入磁碟中的專案」，選倉庫裡的 **court-game** 資料夾，不是整個 eduai。
+4. 等待匯入完成。如果 Console 有紅色錯誤，把第一個錯誤連同上下文貼給 AI；不要只關掉錯誤視窗。
+5. 若尚無 `Assets/Scenes/Courtroom.unity`，用上方選單 `EduAI > Create Courtroom Prototype` 建立。已有場景時直接打開；建立器刻意不覆寫它。
+6. 按 Play。WASD 移動、滑鼠轉向、Space 跳躍、E 互動、1–4 選擇、Esc 釋放滑鼠。網頁版需點擊遊戲畫面。
+
+這一版是鍵鼠原型，尚未實作手機觸控。故事為虛構證據判讀練習，不是真正法院程序或法律意見。
+
+## 3. 程式在哪裡
+
+| 想改的內容 | 檔案／資料夾（相對 court-game） |
+| --- | --- |
+| 移動、跳躍、滑鼠 | `Assets/Scripts/Player/FirstPersonController.cs` |
+| 對準物件、距離、E 互動 | `Assets/Scripts/Interaction/PlayerInteractor.cs` |
+| 開庭、調查、作答、重玩 | `Assets/Scripts/CourtSession.cs` |
+| NPC 對話 | `Assets/Scripts/NPC/NPCInteractable.cs` |
+| 題目與提示介面 | `Assets/Scripts/UI/` |
+| 初始法庭配置 | `Assets/Editor/CourtProjectBuilder.cs` |
+| 實際場景 | `Assets/Scenes/Courtroom.unity`（產生後才存在） |
+| 網頁載入画面 | `Assets/WebGLTemplates/Court/index.html` |
+| 自動流程檢查 | `Assets/Editor/CourtSmokeTests.cs` |
+| 容器與服務設定 | `Dockerfile`、`compose.yaml`、`docker/nginx.conf` |
+
+場景一旦已生成，改建立器不會自動更新已有場景。請在 Unity 編輯場景，或先另存備份，再由 AI 明確說明如何重新產生；不要直接刪掉場景。
+
+## 4. 測試與打包
+
+先用選單 `EduAI > Run Court Smoke Tests` 跑基本流程測試，Console 應出現 `COURT_SMOKE_TESTS_PASSED`。再按 HANDOFF.md 的清單實際遊玩；自動測試不等於滑鼠、碰撞、中文和瀏覽器都通過。
+
+Windows 也可在倉庫根目錄執行（把路徑換成你的 Unity Editor）：
+
+```powershell
+powershell -File .\court-game\tools\build.ps1 -Editor "C:\Program Files\Unity\Hub\Editor\6000.3.24f1\Editor\Unity.exe"
+```
+
+這會建立缺少的場景、測試並輸出 `court-game/Builds/WebGL/`。失敗看 `court-game/Logs/`；不要將授權檔或完整含敏感資料的紀錄推上 Git。
+
+**不要雙擊生成的 HTML 當作遊戲測試。** WebGL 必須透過 HTTP 伺服器開啟。沒有 Docker 的人可先請 AI 啟動只綁 `127.0.0.1` 的本機靜態伺服器，不要自動公開到外網。
+
+## 5. Docker 與部署
+
+Docker 是運行網站的容器，不是 Unity 編輯器。現有 Docker 預設提供倉庫 `play/`；此目錄是空白頁還是遊戲，請看 STATUS.md，不要自行假定。
+
+有 Docker 且符合其使用條款時，在倉庫根目錄：
+
+```sh
+docker compose -f court-game/compose.yaml up --build -d
+```
+
+瀏覽器開 `http://localhost:8080/`。停止（不刪原始碼）：
+
+```sh
+docker compose -f court-game/compose.yaml down
+```
+
+只測剛建置的 Unity 成品：
+
+```sh
+docker build -f court-game/Dockerfile --build-arg WEB_ROOT=court-game/Builds/WebGL -t eduai-court:local .
+docker run --rm --read-only --tmpfs /tmp:size=32m,mode=1777 --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8080:8080 eduai-court:local
+```
+
+发布順序：Unity build 成功 → 本機 HTTP 實測 → 將成品更新到 `play/` → 只提交相關變更並推 `1ch666/eduai` → 確認線上遊戲 → 重新執行 Actions 的 `Court Docker handoff` → 下載新映像和 SHA256SUMS → 更新 STATUS.md 的來源 commit、測試結果與下載位置。**舊的空白頁 Docker 映像不會自動变成新遊戲。**
+
+GitHub Pages 只放靜態網站，不會運行 Docker、session 或 AI 後端。不要為了部署而開通付費主機。
+
+## 6. 交給 AI 時
+
+把同資料夾的 **給朋友的AI.txt** 全部貼給你的 AI，並告訴它你本機專案資料夾的位置。不要貼 API key、GitHub token、Cookie、Unity 授權檔或密碼。
+
+Session、登入與 AI 目前留給後端人員。`/api/` 回 501 是尚未接線，不是已實作；安全邊界詳見 HANDOFF.md。

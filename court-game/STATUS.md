@@ -1,6 +1,29 @@
 # 進度檢查點 — 2026-09-21
 
-最新範圍：使用者同意先部署空白遊戲頁面（play/index.html），模擬法庭新增「開始遊玩」連結。3D 製作留給朋友，需求已寫入該 HTML 註解；以下 Unity 未完成事項是後續交接項目，不代表空白入口失敗。Unity CLI 另已成功安裝，但 Editor 與實際 WebGL 編譯仍未完成。
+最新範圍：使用者要求繼續完成 3D 遊戲，真正遊戲部署後更新 Docker，並提供無經驗朋友可使用的 AI 接手文件。session 與 AI 仍留給後端。成功建置、實測後才替換 /play/ 空白入口。
+
+## 本輪進度（原始碼已寫，Unity 尚未編譯）
+
+- 虛構「消失的平板」：開庭、查看證物 A、詢問證人、回法官處作答、答錯提示、完成及重玩。
+- 修正場景驗證誤報 UI 可選欄位；補齊 InputLegacy／TextRendering 模組；WebGL 點擊鎖定滑鼠，Esc 只解鎖。
+- 加入 CourtSmokeTests：選項邊界、回呼一次、答錯／完成／重玩；尚未在 Unity 執行。
+- WebGL 中文載入模板：進度、錯誤、返回學堂、鍵鼠限制。尚未部署。
+- tools/build.ps1：建立缺少場景、流程測試、WebGL build；不覆寫已有場景。
+- START-HERE.md 與「給朋友的AI.txt」：新手操作、檔案用途、部署後 Docker 更新、安全邊界。
+
+已通過：模板 JavaScript 語法、manifest.json 解析、build.ps1 PowerShell 語法、git diff --check。這不等於 Unity 編譯或遊玩驗證。
+
+## 阻擋：需使用者完成 Windows 安裝授權
+
+UnitySetup64-6000.3.24f1.exe 已下載（4,127,507,400 bytes）；數位簽章 Valid，Unity Technologies SF。首次 Program Files 安裝失敗；官方 --no-elevate 模式回 ELEVATION_REQUIRED。改用可寫入目錄仍回報：`The Windows elevation prompt was cancelled or timed out.` 未繞過授權或改安全設定。
+
+下載檔：`C:\Users\user\AppData\Local\Packages\UnityTechnologies.UnityCLI_2vrhnee42bhxm\LocalCache\Roaming\UnityHub\downloads\UnitySetup64-6000.3.24f1.exe`。Unity CLI 安裝目錄已設為 `C:\Users\user\Documents\Codex\2026-09-01\new-chat\tools\UnityEditors`，此工具目錄不提交 Git。
+
+需要使用者允許官方安裝程式的 Windows 管理員提示，安裝 Editor 6000.3.24f1 與 Web Build Support，在 Hub 登入並確認資格、啟用免費授權。license status 為 LICENSING_CLIENT_UNAVAILABLE，editors -i 仍無 Editor。
+
+Courtroom.unity 尚未生成，無新 WebGL 成品、無新遊戲上線、無新版遊戲 Docker。安裝後繼續：build.ps1 → HANDOFF 實測 → 發布 play/ → 線上驗證 → 重建並測 Docker → 更新本檔。
+
+## 先前已完成：空白入口與其容器
 
 本次優先保留並推送簡單版原始碼，避免進度遺失。這不是已完成遊戲。
 
