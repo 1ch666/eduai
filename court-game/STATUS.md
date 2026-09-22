@@ -1,6 +1,18 @@
 # 進度檢查點 — 2026-09-22
 
-## 最新：手機專用操作（電腦保持原樣）
+## 最新：後端第一版（帳號、session、資料庫、法庭 AI 端點）
+
+網站後端新增帳號註冊／登入、HttpOnly session cookie、CSRF 驗證、學習進度雲端同步，以及 `/api/ai/ask` 的 `mode: "court"` 法庭角色提示詞。資料放在既有的 Cloudflare Durable Objects SQLite，新增 `ACCOUNT_STORE`（migration v2），沒有新增付費服務。完整說明、設定步驟與限制見倉庫根目錄 `BACKEND.md`。
+
+已驗證：`tsc --noEmit`、`wrangler deploy --dry-run`、`check-frontend.mjs`，以及本機 `wrangler dev` 搭配新的 `scripts/check-api.mjs` 13 項 API 測試全部通過。
+
+尚未完成：**還沒部署到正式環境**，線上 Worker 仍是舊版；沒有 `OLLAMA_API_KEY` 因此法庭模式沒有向 Ollama 實際送出過；沒有真機瀏覽器測試。
+
+Unity 端只新增 `Assets/Scripts/NPC/WorkerDialogueProvider.cs`（`ICourtDialogueProvider` 的 UnityWebRequest 實作）。**它沒有接進 Courtroom.unity，沒有用 Unity Editor 編譯過，也沒有重新 build WebGL**；`play/` 與 Docker 映像的位元組未更動，仍是下方記錄的手機版成品。
+
+---
+
+## 手機專用操作（電腦保持原樣）
 
 新增手機／平板左下圓形移動搖桿、滑動轉向、直接輕點角色／物件、DOM 答案按鈕。手機隱藏準星，不要求 Pointer Lock；仍限制 3m 與最近 collider，不可隔牆互動。電腦不會自動顯示這套介面，保留 WASD、滑鼠、準星、E、1–4 及原本 fallback。
 

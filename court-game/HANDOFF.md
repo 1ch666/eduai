@@ -58,11 +58,14 @@ Docker 提供靜態檔案，不能用來開啟 C# 原始碼遊玩。若缺少 in
 
 ## 後端／session 邊界
 
-- `ICourtDialogueProvider` 是未來回覆介面，原型目前不發送請求。
-- 預留同源 `POST /api/ai/ask`；前端欄位、回覆格式與登入路由需由後端人員確認，不假設舊 API 支援 session。
-- Nginx `/api/` 目前明確回 501；由後端人員改成自己的 upstream，不能把目前區塊當成已串接。
-- Session ID 由伺服器產生、輪替與驗證，透過 HttpOnly、Secure、適當 SameSite Cookie 傳遞。狀態變更請求要驗證 Origin／CSRF；不把 session ID 放在 URL 或 localStorage。
-- 後端負責登入、授權、CSRF、限流、輸入長度、AI 領域規則、逾時與錯誤處理。AI key 只能放伺服器秘密設定。
+後端第一版已完成，細節與驗證狀態見倉庫根目錄的 `BACKEND.md`。以下是與這個 Unity 專案有關的部分：
+
+- Worker 已提供 `POST /api/ai/ask`，加上 `"mode": "court"` 會改用法庭 NPC 的角色提示詞，欄位為 `question`、`clientId`、`requestId`、`mode`、`npc:{name, role}`、`caseTitle`；回覆是 `{ "answer": "…" }`，錯誤是 `{ "error": "…" }`。
+- `ICourtDialogueProvider` 已有實作 `Assets/Scripts/NPC/WorkerDialogueProvider.cs`（UnityWebRequest）。**它還沒接進 Courtroom.unity，也還沒用 Unity Editor 編譯過**；`play/` 目前的成品不含這個檔案。要使用必須接上場景、重新 build WebGL 並重測。
+- 帳號、session 與學習進度是網站端功能（cookie 在瀏覽器頁面，不在 Unity 裡）。Unity 只用一個存在 PlayerPrefs 的 clientId 供伺服器限流，那不是登入憑證，也不能當成權限或成績。
+- Nginx `/api/` 仍刻意回 501。要讓 Docker 版也能呼叫 AI，需由部署者改成指向 Worker 的同源反向代理；目前區塊不代表已串接。
+- Session ID 由伺服器產生與驗證，透過 HttpOnly Cookie 傳遞；狀態變更請求要帶 CSRF token，並通過 Origin 白名單。不把 session ID 放在 URL 或 localStorage。
+- AI key 只在 Worker 的 secret 設定裡，不得進 Assets、WebGL 或 Git。
 - GitHub Pages 無法執行 Docker 或後端；容器需另外的主機。不要為此自動開通付費資源。
 
 ## 待實測驗收
