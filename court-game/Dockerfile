@@ -5,6 +5,7 @@ ARG WEB_ROOT=play
 COPY court-game/docker/nginx.conf /etc/nginx/nginx.conf
 COPY --chown=nginx:nginx ${WEB_ROOT}/ /usr/share/nginx/html/
 RUN test -s /usr/share/nginx/html/index.html \
+    && test -s /usr/share/nginx/html/touch-controls.js \
     && test -s /usr/share/nginx/html/Build/WebGL.loader.js \
     && for asset in WebGL.data.unityweb WebGL.wasm.unityweb WebGL.framework.js.unityweb; do \
          test -s "/usr/share/nginx/html/Build/$asset" \

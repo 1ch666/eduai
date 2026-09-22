@@ -43,6 +43,18 @@ namespace EduAI.Court.Editor
         {
             var player = UnityEngine.Object.FindFirstObjectByType<FirstPersonController>();
             var controller = player.GetComponent<CharacterController>();
+            Require(!player.TouchMode, "Desktop remains the default");
+            Require(!FirstPersonController.TryTouchVector("NaN,1", out _), "Reject invalid touch input");
+            Require(FirstPersonController.TryTouchVector("0.5,0.25", out var normalized) && normalized.x == .5f, "Parse normalized touch");
+            player.EnableTouchControls();
+            var mobileChoices = UnityEngine.Object.FindFirstObjectByType<ChoiceSystem>();
+            player.GetComponent<PlayerInteractor>().TouchInteract("0.5,0.5");
+            Require(!mobileChoices.IsOpen, "Distant taps cannot interact");
+            Teleport(controller, new Vector3(0, .05f, 6.8f));
+            player.GetComponent<PlayerInteractor>().TouchInteract("0.5,0.5");
+            Require(mobileChoices.IsOpen, "Near NPC tap opens choices without crosshair");
+            mobileChoices.ChooseFromTouch(3);
+            Require(!mobileChoices.IsOpen, "Touch answer closes choices");
             player.enabled = false;
             player.GetComponent<PlayerInteractor>().enabled = false;
             Teleport(controller, new Vector3(0, 2, 0));

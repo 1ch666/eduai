@@ -18,9 +18,12 @@ namespace EduAI.Court
         private bool wasDragging;
         private Vector3 previousDragPosition;
         private bool entered;
+        private Vector2 touchMove, touchLook;
+        public bool TouchMode { get; private set; }
+        public static bool TouchEnabled => Active && Active.TouchMode;
         public static FirstPersonController Active { get; private set; }
         public static bool InputActive => Active && Active.entered && Active.IsCaptured;
-        public bool IsCaptured => dragLook ? dragLookActive : Cursor.lockState == CursorLockMode.Locked;
+        public bool IsCaptured => TouchMode ? entered : dragLook ? dragLookActive : Cursor.lockState == CursorLockMode.Locked;
 
         public void Configure(Camera camera) { viewCamera = camera; }
         private void Awake()
@@ -47,24 +50,51 @@ namespace EduAI.Court
             Input.ResetInputAxes();
             if (dragLook) Capture(true);
             var hud = FindFirstObjectByType<InteractionUI>();
-            if (hud) hud.ShowMessage("走到前方法官桌，對準「開庭」按 E。", 15);
+            if (hud) hud.ShowMessage(TouchMode ? "左下搖桿移動，滑動畫面轉向。\n走近後直接點法官或開庭按鈕。" : "走到前方法官桌，對準「開庭」按 E。", 15);
         }
+        // Only the touch Web UI calls these; desktop's input branch is unchanged.
+        public void EnableTouchControls()
+        {
+            TouchMode = true;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            foreach (string path in new[] { "Canvas/Crosshair", "Canvas/Controls", "Canvas/Message" })
+            { var item = GameObject.Find(path); if (item) item.SetActive(false); }
+        }
+        public static bool TryTouchVector(string payload, out Vector2 value)
+        {
+            value = Vector2.zero;
+            if (string.IsNullOrEmpty(payload) || payload.Length > 80) return false;
+            var parts = payload.Split(',');
+            if (parts.Length != 2 || !float.TryParse(parts[0], System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out float x) ||
+                !float.TryParse(parts[1], System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out float y) ||
+                float.IsNaN(x) || float.IsInfinity(x) || float.IsNaN(y) || float.IsInfinity(y)) return false;
+            value = new Vector2(x, y); return true;
+        }
+        public void TouchMove(string payload)
+        { if (TouchMode && entered && TryTouchVector(payload, out var value)) touchMove = Vector2.ClampMagnitude(value, 1); }
+        public void TouchLook(string payload)
+        { if (TouchMode && entered && TryTouchVector(payload, out var value)) touchLook += Vector2.ClampMagnitude(value, 30); }
+        public void ResetTouchInput() { touchMove = touchLook = Vector2.zero; }
         public void Capture(bool capture)
         {
             dragLookActive = capture;
-            Cursor.lockState = capture && !dragLook ? CursorLockMode.Locked : CursorLockMode.None;
+            Cursor.lockState = capture && !dragLook && !TouchMode ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = dragLook || !capture;
         }
         // Web 模板只在瀏覽器拒絕 Pointer Lock 時呼叫；不繞過瀏覽器權限。
         public void EnableDragLook()
         {
+            if (TouchMode) return;
             dragLook = true;
             Capture(entered);
             Input.ResetInputAxes();
             var hud = FindFirstObjectByType<InteractionUI>();
             if (hud) hud.ShowMessage("相容模式：按住滑鼠左鍵拖曳視角。\nWASD 移動、E 互動、1–4 作答不變。Esc 暫停。", 15);
         }
-        private void OnApplicationFocus(bool focused) { if (!focused) Capture(false); }
+        private void OnApplicationFocus(bool focused) { if (!focused) { Capture(false); ResetTouchInput(); } }
         private void OnDisable() { Capture(false); if (Active == this) Active = null; }
         private void Update()
         {
@@ -78,7 +108,8 @@ namespace EduAI.Court
             }
             if (!viewCamera || !controller) return;
             Vector2 look = Vector2.zero;
-            if (!dragLook) look = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
+            if (TouchMode) { look = touchLook / mouseSensitivity; touchLook = Vector2.zero; }
+            else if (!dragLook) look = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
             else
             {
                 bool dragging = Input.GetMouseButton(0);
@@ -97,6 +128,7 @@ namespace EduAI.Court
             Vector2 input = Vector2.ClampMagnitude(new Vector2(
                 (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0),
                 (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0)), 1);
+            if (TouchMode) input = touchMove;
             if (controller.isGrounded && verticalSpeed < 0) verticalSpeed = -2f;
             if (controller.isGrounded && Input.GetKeyDown(KeyCode.Space))
                 verticalSpeed = Mathf.Sqrt(jumpHeight * -2f * gravity);

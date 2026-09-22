@@ -4,7 +4,7 @@
 
 ## 本次範圍
 
-第一人稱 WASD、滑鼠轉向、跳躍、碰撞、中央準星、3 公尺 Raycast、E 互動、開庭按鈕、五位 NPC、證物 A 與鍵盤 1–4 選項。新增虛構「消失的平板」調查、答錯提示、完成／重玩流程。場景由 `Assets/Editor/CourtProjectBuilder.cs` 建立，互動邏輯分檔。無武器、無正式案件審理、無 AI、無 session 實作。新手先看 START-HERE.md，實際驗證狀態見 STATUS.md。
+電腦保留第一人稱 WASD、滑鼠轉向、跳躍、碰撞、中央準星、3 公尺 Raycast、E 互動、鍵盤 1–4。手機另有左下搖桿、滑動視角、直接輕點 NPC／證物／按鈕、點選答案，不使用準星。五位 NPC、證物 A 與虛構「消失的平板」調查、答錯提示、完成／重玩流程共用相同邏輯。場景由 `Assets/Editor/CourtProjectBuilder.cs` 建立，互動邏輯分檔。無武器、無正式案件審理、無 AI、無 session 實作。新手先看 START-HERE.md，實際驗證狀態見 STATUS.md。
 
 ## Unity
 
@@ -15,7 +15,18 @@
 3. 打開 Courtroom 並 Play；依下列清單實測。
 4. 可透過 batch 呼叫 `EduAI.Court.Editor.CourtProjectBuilder.ValidateScene` 與 `EduAI.Court.Editor.CourtProjectBuilder.BuildWebGL`。
 
-WebGL 使用 **Release + Gzip + Decompression Fallback** 輸出 `Builds/WebGL`。`.unityweb` 由 Unity loader 解壓，不依賴伺服器 Content-Encoding；不要直接改副檔名或替壓縮檔設定 application/wasm。頁面進入後立即初始化一次、顯示進度，100% 才啟用「開始遊戲」，點擊只移除封面。Esc 解鎖後可再次點擊恢復；不支援 Pointer Lock 時按住左鍵拖曳。這是鍵鼠原型，不宣稱支援手機觸控。
+WebGL 使用 **Release + Gzip + Decompression Fallback** 輸出 `Builds/WebGL`。`.unityweb` 由 Unity loader 解壓，不依賴伺服器 Content-Encoding；不要直接改副檔名或替壓縮檔設定 application/wasm。頁面進入後立即初始化一次、顯示進度，100% 才啟用「開始遊戲」，點擊只移除封面。電腦 Esc 解鎖後可再次點擊恢復；不支援 Pointer Lock 時按住左鍵拖曳。手機不要求 Pointer Lock。
+
+## 手機觸控與電腦隔離
+
+- `touch-controls.js` 只有 `(pointer: coarse)` 且有 touch points 時自動啟用。電腦正常開啟不顯示搖桿，不改变原本操作。`?touch=1` 僅供桌面 QA 明確預覽手機模式。
+- 搖桿與滑動視角各自追蹤 Pointer ID，雙指可同時操作；鬆手／取消／失焦／旋轉螢幕會清除輸入，避免角色繼續走。
+- 輕點與滑動以 10 CSS px／500 ms 區分；拖曳不會誤觸 NPC。
+- 點擊由 canvas CSS 座標轉為 Unity normalized viewport，保留 3 公尺、最近 collider、遮擋及選項開啟時禁止場景互動的規則。
+- 手機答案用 DOM 原生按鈕，至少 48px 高，文字使用 textContent，不執行 HTML。選單開啟先歸零移動；桌面仍用原 UI 與 1–4。
+- Unity 與 Web UI 橋接：`Assets/Plugins/TouchControls.jslib`、`TouchWebBridge.cs`。只傳本地畫面資料，不接新 API、不新增付費套件。
+- 發布務必包含 `touch-controls.js`，Docker／check-build 已檢查此檔。不要只複製 Build 資料夾。
+- 測試：`node --test court-game/tools/test-template.mjs court-game/tools/test-touch.mjs`；Unity Play 包含遠距離點擊拒絕、近距離 NPC 點擊及答案回呼。瀏覽器尺寸模擬不等於 iPhone／Android 真機測試，實測狀態見 STATUS。
 
 `BuildWebGL` 強制關閉 Development、Script Debugging、Profiler／Deep Profiling、除錯符號，開啟 Strip Engine Code，Managed Stripping 使用 Medium。High 未啟用；未來增加反射／AI 套件後須重新測試。字型已裁成靜態文字子集，新增文字前閱讀 `tools/fonts/README.md` 並重建／檢查字集；原字型保留在 tools/fonts，不進入遊戲下載。
 

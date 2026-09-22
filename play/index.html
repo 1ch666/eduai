@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,follow">
   <meta name="theme-color" content="#333c40">
   <title>模擬法庭｜3D 教學原型</title>
@@ -21,26 +21,51 @@
     p { max-width: 42em; }
     #progress { width: 100%; height: 8px; accent-color: #b5c4bc; }
     #error { color: #ffe2ae; }
+    #touch-ui[hidden], #touch-choices[hidden], #touch-message[hidden] { display: none; }
+    .touch-mode { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+    .touch-mode header { min-height: 44px; flex-shrink: 0; font-size: 12px; padding: max(6px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 6px max(12px, env(safe-area-inset-left)); }
+    .touch-mode main { flex: 1; min-height: 0; height: auto; }
+    .touch-mode #cover { display: block; overflow-y: auto; padding: 16px; }
+    .touch-mode #cover[hidden] { display: none; }
+    .touch-mode #cover p { margin-left: auto; margin-right: auto; }
+    #touch-ui, #touch-look, #touch-choices { position: absolute; inset: 0; }
+    #touch-ui { user-select: none; -webkit-user-select: none; }
+    #touch-look { touch-action: none; }
+    #touch-stick { position: absolute; width: 128px; height: 128px; left: max(18px, env(safe-area-inset-left)); bottom: max(20px, env(safe-area-inset-bottom)); border: 2px solid #dee6e2; border-radius: 50%; background: #25312f99; display: grid; place-items: center; touch-action: none; }
+    #touch-knob { width: 48px; height: 48px; background: #e0e7e3d9; border: 1px solid #222; border-radius: 50%; pointer-events: none; }
+    #touch-message { position: absolute; top: 10px; left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); margin: 0; padding: 10px 12px; background: #1d2424e8; color: white; font-size: 16px; line-height: 1.5; white-space: pre-line; max-width: none; max-height: 32%; overflow-y: auto; touch-action: pan-y; }
+    #touch-choices { background: #18202066; display: grid; place-items: center; padding: 10px max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+    #touch-sheet { width: min(100%, 540px); max-height: 100%; overflow: auto; touch-action: pan-y; }
+    #touch-question { margin: 0 0 8px; padding: 10px 12px; background: #1d2424; font-size: 16px; white-space: pre-line; }
+    #touch-options { display: grid; gap: 6px; }
+    #touch-options button { min-height: 48px; padding: 10px 14px; text-align: left; font-size: 16px; line-height: 1.4; }
   </style>
 </head>
 <body>
   <header><span>模擬法庭 · 教學原型</span><span id="input-mode" role="status"></span><a href="https://1ch666.github.io/eduai/">返回學堂</a></header>
   <main>
     <canvas id="game" width="1280" height="720" tabindex="0" aria-label="3D 法庭；WASD 移動、滑鼠轉向、E 互動、1 到 4 作答"></canvas>
+    <div id="touch-ui" hidden>
+      <div id="touch-look" aria-label="滑動轉向，輕點角色或物件互動"></div>
+      <div id="touch-stick" role="group" aria-label="移動搖桿"><div id="touch-knob"></div></div>
+      <p id="touch-message" role="status" hidden></p>
+      <section id="touch-choices" aria-label="選擇答案" hidden><div id="touch-sheet"><p id="touch-question"></p><div id="touch-options"></div></div></section>
+    </div>
     <section id="cover" aria-label="開始遊戲">
       <h1>消失的平板</h1>
       <p>查看證物，詢問證人，再回法官處作答。</p>
-      <p>需鍵盤與滑鼠：WASD 移動 · E 互動 · 1–4 選擇 · Esc 釋放滑鼠</p>
+      <p id="control-help">需鍵盤與滑鼠：WASD 移動 · E 互動 · 1–4 選擇 · Esc 釋放滑鼠</p>
       <button id="start" type="button" disabled>正在準備遊戲</button>
       <p id="status" role="status">正在載入 0%</p>
       <progress id="progress" value="0" max="100" aria-label="遊戲載入進度"></progress>
-      <p>虛構情境，非法律意見。此版尚無手機觸控操作。</p>
+      <p>虛構情境，非法律意見。</p>
       <p id="error" role="alert" hidden></p>
     </section>
   </main>
   <noscript>請啟用 JavaScript，並使用支援 WebGL 的瀏覽器。</noscript>
   <!-- 接手請先讀 court-game/AGENTS.md、STATUS.md、HANDOFF.md。
        這是 Unity 建置模板，不要手改部署後的生成檔。AI/session 由後端處理，禁止內嵌密鑰。 -->
+  <script src="touch-controls.js"></script>
   <script>
     const canvas = document.getElementById('game');
     const start = document.getElementById('start');
@@ -51,8 +76,14 @@
     let ready = false;
     let entered = false;
     let unityInstance;
+    const touch = window.CourtTouch({ canvas, getInstance: () => unityInstance, isEntered: () => entered });
+    if (touch.enabled) {
+      document.body.classList.add('touch-mode');
+      document.getElementById('control-help').textContent = '搖桿移動 · 滑動轉向 · 輕點角色、物件與答案';
+    }
     let fallbackRequested = false;
     function useDragLook() {
+      if (touch.enabled) return;
       if (fallbackRequested) return;
       fallbackRequested = true;
       document.getElementById('input-mode').textContent = '相容模式：按住左鍵拖曳視角';
@@ -82,9 +113,10 @@
       entered = true;
       cover.hidden = true;
       canvas.focus();
+      if (touch.enabled) touch.start();
       unityInstance.SendMessage('Player', 'BeginGame');
       // 使用本次點擊手勢；不支援時仍走原本的拖曳視角 fallback。
-      canvas.requestPointerLock();
+      if (!touch.enabled) canvas.requestPointerLock();
     });
     // 進頁即初始化一次；開始按鈕只進入已就緒的遊戲，不重新下載／建立 instance。
     function preloadGame() {

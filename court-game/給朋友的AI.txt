@@ -4,7 +4,7 @@
 
 專案只使用免費服務和免費資產，GitHub 倉庫是 https://github.com/1ch666/eduai.git。不要推到舊倉庫、開付費服務、索取我的密碼，或將 token、session cookie、API key、Unity 授權檔放進程式或 Git。
 
-目標是 Unity 6000.3.24f1 的第一人稱 3D 法庭：WASD、滑鼠、跳躍、碰撞、準星、3m E 互動、開庭按鈕高亮、五個 NPC、證物 A、1–4 作答，以及可重玩的虛構證據判讀流程。保持檔案分工，沒有武器，不把它說成真實司法程序。
+目標是 Unity 6000.3.24f1 的第一人稱 3D 法庭：電腦保持 WASD、滑鼠、跳躍、碰撞、準星、3m E 互動、開庭按鈕高亮、1–4；手機另有左下搖桿、滑動視角、直接點角色／物件與答案，不用準星。五個 NPC、證物 A 與可重玩流程共用。手機只在觸控模式啟用，不要更改電腦操作。保持檔案分工，沒有武器，不把它說成真實司法程序。接手前閱讀 HANDOFF 手機章節，發布時不能漏掉 touch-controls.js。
 
 先確認 Unity Editor、Web Build Support 及免費授權可用。尚無 Courtroom.unity 才執行 Create Courtroom Prototype；不要覆寫已有場景。執行 CourtSmokeTests、實際 Play、WebGL build，再以 HTTP 在瀏覽器測試載入、中文、指標鎖定、移動、碰撞、E、1234、答錯、完成、重玩。無法跑的測試要明說，不可只看程式就說成功。
 

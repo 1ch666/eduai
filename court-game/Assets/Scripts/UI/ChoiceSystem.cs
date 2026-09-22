@@ -19,6 +19,12 @@ namespace EduAI.Court
             if (!panel || !options) { Debug.LogError("Choice UI is not configured.", this); return; }
             options.text = $"[1] {option1}\n[2] {option2}\n[3] {option3}\n[4] {option4}";
             onSelected = callback; IsOpen = true; panel.SetActive(true);
+            if (FirstPersonController.TouchEnabled)
+            {
+                panel.SetActive(false);
+                FirstPersonController.Active.ResetTouchInput();
+                TouchWebBridge.ShowChoices(option1, option2, option3, option4);
+            }
         }
         public void Choose(int index)
         {
@@ -26,7 +32,13 @@ namespace EduAI.Court
             Action<int> callback = onSelected;
             Close(); callback?.Invoke(index); Selected?.Invoke(index);
         }
-        public void Close() { IsOpen = false; onSelected = null; if (panel) panel.SetActive(false); }
+        public void ChooseFromTouch(int index)
+        { if (FirstPersonController.TouchEnabled && FirstPersonController.InputActive) Choose(index); }
+        public void Close()
+        {
+            IsOpen = false; onSelected = null; if (panel) panel.SetActive(false);
+            if (FirstPersonController.TouchEnabled) TouchWebBridge.HideChoices();
+        }
         private void Update()
         {
             if (!IsOpen || !FirstPersonController.InputActive) return;

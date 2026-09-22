@@ -6,16 +6,16 @@ import assert from 'node:assert/strict';
 const root = resolve(process.argv[2] || 'play');
 const compareBrotli = process.argv.includes('--brotli');
 const html = await readFile(join(root, 'index.html'), 'utf8');
-const before = { data: 18702452, wasm: 16189274, framework: 403992, loader: 26983 };
+const before = { data: 18702452, wasm: 16189274, framework: 403992, loader: 26983, touch: 0 };
 const definitions = { data: /dataUrl:\s*'([^']+)'/, wasm: /codeUrl:\s*'([^']+)'/,
-  framework: /frameworkUrl:\s*'([^']+)'/, loader: /loader.src\s*=\s*'([^']+)'/ };
+  framework: /frameworkUrl:\s*'([^']+)'/, loader: /loader.src\s*=\s*'([^']+)'/, touch: /<script src="(touch-controls.js)">/ };
 const rows = [];
 for (const [type, regex] of Object.entries(definitions)) {
   const file = html.match(regex)?.[1];
-  assert(file && /^Build\/[\w.-]+$/.test(file), `Safe ${type} URL required`);
+  assert(file && /^(Build\/[\w.-]+|touch-controls\.js)$/.test(file), `Safe ${type} URL required`);
   const bytes = await readFile(join(root, file));
   const compressed = file.endsWith('.unityweb');
-  if (type !== 'loader') assert(compressed, `${type} must use compression fallback`);
+  if (['data', 'wasm', 'framework'].includes(type)) assert(compressed, `${type} must use compression fallback`);
   const raw = compressed ? gunzipSync(bytes) : bytes;
   if (type === 'wasm') assert.equal(raw.subarray(0, 4).toString('hex'), '0061736d');
   if (type === 'data') assert(raw.subarray(0, 32).toString().includes('UnityWebData'));

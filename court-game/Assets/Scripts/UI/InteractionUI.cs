@@ -19,6 +19,12 @@ namespace EduAI.Court
         public void ShowMessage(string text, float seconds = 7)
         {
             if (!message) return;
+            if (FirstPersonController.TouchEnabled)
+            {
+                message.gameObject.SetActive(false);
+                TouchWebBridge.Message(text.Replace("對準後按 E", "直接輕點").Replace("對準「開庭」按 E", "輕點「開庭」"), seconds);
+                return;
+            }
             message.text = text; message.gameObject.SetActive(true);
             messageUntil = Time.unscaledTime + seconds;
         }

@@ -17,6 +17,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          node --test court-game/tools/test-template.mjs court-game/tools/test-touch.mjs
           docker compose -f court-game/compose.yaml config --quiet
           docker build -f court-game/Dockerfile -t eduai-court:preview .
           docker run --rm eduai-court:preview nginx -t
@@ -30,10 +31,11 @@ jobs:
           node court-game/tools/check-build.mjs play
           # .unityweb is decompressed by Unity's fallback; it must not depend on
           # Content-Encoding or application/wasm on the compressed response.
-          for asset in play/Build/*; do
-            curl --fail "http://127.0.0.1:8080/Build/$(basename "$asset")" -o /tmp/court-asset
+          for asset in play/touch-controls.js play/Build/*; do
+            asset_path="${asset#play/}"
+            curl --fail "http://127.0.0.1:8080/$asset_path" -o /tmp/court-asset
             cmp "$asset" /tmp/court-asset
-            curl --fail "http://127.0.0.1:8080/play/Build/$(basename "$asset")" -o /tmp/court-play-asset
+            curl --fail "http://127.0.0.1:8080/play/$asset_path" -o /tmp/court-play-asset
             cmp "$asset" /tmp/court-play-asset
           done
           test "$(curl -s -o /tmp/api.json -w '%{http_code}' http://127.0.0.1:8080/api/ai/ask)" = 501

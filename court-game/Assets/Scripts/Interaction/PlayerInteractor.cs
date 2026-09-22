@@ -13,8 +13,23 @@ namespace EduAI.Court
         private MonoBehaviour targetComponent;
         public void Configure(Camera camera, InteractionUI hud, ChoiceSystem choiceSystem)
         { viewCamera = camera; ui = hud; choices = choiceSystem; }
+        public void TouchInteract(string payload)
+        {
+            if (!FirstPersonController.TouchEnabled || !FirstPersonController.InputActive ||
+                !viewCamera || (choices && choices.IsOpen) ||
+                !FirstPersonController.TryTouchVector(payload, out var position) ||
+                position.x < 0 || position.x > 1 || position.y < 0 || position.y > 1) return;
+            // Same nearest-hit / 3m rule as desktop; taps never go through walls.
+            var ray = viewCamera.ViewportPointToRay(new Vector3(position.x, position.y, 0));
+            if (Physics.Raycast(ray, out var hit, distance, layers, QueryTriggerInteraction.Ignore))
+                foreach (var candidate in hit.collider.GetComponentsInParent<MonoBehaviour>())
+                    if (candidate is IInteractable item && candidate.isActiveAndEnabled)
+                    { item.Interact(); return; }
+            if (ui) ui.ShowMessage("再靠近角色或物件，然後輕點它。", 3);
+        }
         private void Update()
         {
+            if (FirstPersonController.TouchEnabled) { ClearTarget(); return; }
             // 最近命中的 collider 若不是 IInteractable，互動就停止：避免隔牆使用物件。
             // 選項開啟或滑鼠解鎖時暫停射線互動，但不隱藏中央準星。
             if (!viewCamera || !ui) return;

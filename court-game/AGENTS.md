@@ -4,7 +4,7 @@
 
 ## 範圍與優先順序
 
-1. 最新使用者決定（2026-09-22）：先完成 Unity WebGL 載入優化、更新有缺失的 Docker；奶蛙模型稍後提供。已部署的可玩原型使用自動預載入＋Gzip fallback，不要退回空白入口或點擊後才載入；session 與 AI 仍留給後端。
+1. 最新使用者決定（2026-09-22）：手機加入左下搖桿、滑動轉向、直接點畫面互動／作答，不用準星；**電腦維持原樣**。保留自動預載入＋Gzip fallback，更新 Docker；奶蛙模型稍後提供。session 與 AI 仍留給後端。
 2. 網站模擬法庭「開始遊玩」維持 `/eduai/play/`；目前已嵌入真正 Unity WebGL，實際驗證與版本以 STATUS.md 為準。保持 WASD／E／1–4／Pointer Lock fallback。
 3. 保留 Dockerfile／compose 給後端人員；只有 Docker build/run 成功才能稱已完成容器打包。
 4. AI、登入與 session 由後端人員接續。不得把 API key、授權檔、cookie 或憑證放進 Assets、WebGL 或 Git。

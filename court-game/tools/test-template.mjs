@@ -20,7 +20,7 @@ function createPage(pointerLock, rejectLoad = false) {
     document: { getElementById: id => nodes[id], createElement: () => ({}),
       addEventListener: (type, callback) => { documentEvents[type] = callback; },
       body: { appendChild: element => element.onload() } },
-    window: { devicePixelRatio: 2 },
+    window: { devicePixelRatio: 2, CourtTouch: () => ({ enabled: false }) },
     createUnityInstance: (_canvas, _config, onProgress) => {
       calls++; reportProgress = onProgress; return loading;
     }
