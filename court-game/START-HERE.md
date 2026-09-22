@@ -66,6 +66,8 @@ node court-game/tools/check-build.mjs court-game/Builds/WebGL
 
 ## 5. Docker 與部署
 
+若只拿到 Actions 的映像下載包，不需 clone 或 Unity：先讀包內 README.md，再用 compose.image.yaml 啟動。包內 SOURCE_COMMIT.txt 和映像 revision label 可核對版本；更新映像後要重新建立容器。完整說明也在 docker/README.md。
+
 Docker 是運行網站的容器，不是 Unity 編輯器。現有 Docker 預設提供倉庫 `play/` 的壓縮 WebGL；缺少遊戲檔案時建置會失敗。實際測試與映像版本以 STATUS.md 為準。
 
 有 Docker 且符合其使用條款時，在倉庫根目錄：
