@@ -7,6 +7,8 @@
     "build:assets": "node scripts/copy-assets.mjs",
     "sync:laws": "node scripts/sync-law-data.mjs",
     "check": "npm run build:assets && wrangler types && tsc --noEmit && wrangler deploy --dry-run",
+    "check:frontend": "node scripts/check-frontend.mjs",
+    "check:api": "node scripts/check-api.mjs",
     "dev": "npm run build:assets && wrangler dev",
     "deploy": "npm run build:assets && wrangler deploy"
   },
