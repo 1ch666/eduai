@@ -6,9 +6,13 @@
 
 最新 Release 建置／場景／案件流程／真 Play 測試均結束碼 0；模板 5 項測試通過。Gzip fallback、Medium stripping、去除未用依賴／Sprite shader、中文字型子集已完成。實際資源 35,322,701 → 6,227,600 bytes（-82.37%），完整表格與 Brotli header 證據見 LOAD-PERFORMANCE.md。
 
-最終成品已在本機瀏覽器重測：不點按鈕自動載入到 100%、保留封面、按「開始遊戲」進入法庭、中文顯示、W 前進到法官桌、E 交談、1／2／3／4 各選項均生效、Pointer Lock 拒絕後改為拖曳視角、重新拖曳不再跳動。瀏覽器錯誤／警告紀錄為空。真實鎖定滑鼠的正常 Chrome 路徑尚未實測（此內嵌瀏覽器拒絕鎖定；模板單元測試涵蓋成功路徑）。線上發布與 Docker 更新進行中。
+最終成品已在本機瀏覽器重測：不點按鈕自動載入到 100%、保留封面、按「開始遊戲」進入法庭、中文顯示、W 前進到法官桌、E 交談、1／2／3／4 各選項均生效、Pointer Lock 拒絕後改為拖曳視角、重新拖曳不再跳動。瀏覽器錯誤／警告紀錄為空。真實鎖定滑鼠的正常 Chrome 路徑尚未實測（此內嵌瀏覽器拒絕鎖定；模板單元測試涵蓋成功路徑）。
 
-Docker 本輪補上 /play/ 與 / 兩種入口、Build 缺檔及 Gzip 完整性檢查、CI 容器逐檔比對。等待新工作流程完成才交付新映像，勿把 run 35595034481 的舊映像當本版。
+**正式部署完成**：遊戲來源 commit `a4bcbe19bf8d7affd185615fbdc19bcb2b5f3517`。GitHub Pages run https://github.com/1ch666/eduai/actions/runs/35687156750 成功。2026-09-22 公開 https://1ch666.github.io/eduai/play/ 已實測從 0% 自動到 100%、按開始直接進入，中文與 fallback 正常，瀏覽器無 error／warn。HTML、loader、data、wasm、framework 五個線上檔皆 HTTP 200，與本機成品逐位元組一致。
+
+**新版 Docker 已成功重建及驗證**：https://github.com/1ch666/eduai/actions/runs/35687157482 ，與遊戲同一來源 commit `a4bcbe1`。本輪補上 /play/ 與 / 兩種入口、Build 缺檔及 Gzip 完整性檢查、CI 容器逐檔比對。/healthz、API 501、未知路徑404、非 root、唯讀檔案系統及 nosniff 都通過。這是在 GitHub 免費標準 Ubuntu runner 實際 build/run，非本機 Docker 測試；本機尚無 Docker。
+
+交付 artifact `eduai-court-docker`：Linux amd64 映像 `eduai-court:preview`，檔案 `eduai-court-preview.tar.gz` **31,458,086 bytes**。SHA256：`82857623d45147d7842d5128aaf1bf92159df689a35696855f0db2f3fcf650e8`。已下載本機並核對相符，位於工作區 `outputs/court-docker-35687157482/`；GitHub artifact 保留 1 天，過期可用手動 workflow 重建。勿使用 run 35595034481 的舊映像。後續純文件 commit 不更動已驗證遊戲或映像的位元組。
 
 使用者同意奶蛙模型稍後提供；本輪專注載入優化。尚未新增角色、手機觸控、session 或 AI。
 
