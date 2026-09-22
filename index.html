@@ -122,6 +122,29 @@
       cursor: pointer;
     }
     .top-button:hover { background: rgba(255, 255, 255, .1); }
+    .account-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .account-chip {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .12);
+      color: var(--white);
+      font-size: 13px;
+    }
+    .auth-tabs { display: flex; gap: 8px; margin-bottom: 4px; }
+    .auth-form { display: grid; gap: 12px; }
+    .auth-form input {
+      width: 100%;
+      margin-top: 6px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--white);
+      font: inherit;
+    }
 
     main { position: relative; z-index: 1; width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 30px 0 64px; }
     .screen { display: none; animation: reveal .5s both; }
@@ -567,6 +590,11 @@
       <div class="top-actions">
         <button class="top-button hidden" id="headerBack" type="button">回到模式選擇</button>
       </div>
+      <div class="account-actions">
+        <span class="account-chip hidden" id="accountChip"></span>
+        <button class="top-button" id="accountButton" type="button">登入 / 註冊</button>
+        <button class="top-button hidden" id="logoutButton" type="button">登出</button>
+      </div>
     </div>
   </header>
 
@@ -787,6 +815,32 @@
   </div>
   <div class="modal" id="objectionModal" role="dialog" aria-modal="true" aria-labelledby="objectionTitle">
     <div class="modal-box"><div class="modal-head"><h2 class="serif" id="objectionTitle">異議：提出關鍵證物</h2><button class="close-btn" type="button" data-close="objectionModal" aria-label="關閉">×</button></div><div class="modal-body" id="objectionList"></div></div>
+  </div>
+  <div class="modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="modal-box">
+      <div class="modal-head"><h2 class="serif" id="authTitle">登入或註冊</h2><button class="close-btn" type="button" data-close="authModal" aria-label="關閉">×</button></div>
+      <div class="modal-body">
+        <p class="notes-helper">登入只是把練習進度存到雲端，換裝置可以接著練。不需要 email，也不必用真實姓名。</p>
+        <div class="auth-tabs">
+          <button class="tab-btn active" type="button" data-auth-tab="login">登入</button>
+          <button class="tab-btn" type="button" data-auth-tab="register">註冊新帳號</button>
+        </div>
+        <form class="auth-form" id="authForm">
+          <label class="selector-field">帳號（3 至 24 個英文小寫字母、數字或底線）
+            <input id="authUsername" name="username" type="text" autocomplete="username" maxlength="24" required>
+          </label>
+          <label class="selector-field hidden" id="authDisplayNameField">顯示名稱（會出現在共用留言，最多 24 字）
+            <input id="authDisplayName" name="displayName" type="text" autocomplete="nickname" maxlength="24">
+          </label>
+          <label class="selector-field">密碼（至少 8 個字）
+            <input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="128" required>
+          </label>
+          <div class="legal-note hidden" id="authMessage" aria-live="polite"></div>
+          <div class="note-actions"><button class="primary-btn" type="submit" id="authSubmit">登入</button></div>
+        </form>
+        <p class="ai-disclaimer">請不要使用其他網站的密碼。雲端存的是你自己回報的練習紀錄，不是正式成績。</p>
+      </div>
+    </div>
   </div>
   <div class="toast" id="toast" aria-live="polite"></div>
 
@@ -1477,10 +1531,17 @@
     function generateNotesPreview() { renderNotePreview(); $("notesResponse").textContent = "已生成結構化預覽，請先檢查來源與章節考據，再使用下方對話框微調。"; $("notesResponse").classList.remove("hidden"); }
     const NOTE_DB_NAME = "civic-learning-notes";
     const NOTE_STORE_NAME = "messages";
-    const WORKER_API_ORIGIN = ["127.0.0.1", "localhost"].includes(location.hostname) ? location.origin : "https://civic-law-lab-212.yichengc869.workers.dev";
+    // GitHub Pages only hosts the static copy, so it calls the Worker across
+    // origins. Every other host (Worker, localhost) serves /api itself.
+    const WORKER_API_ORIGIN = location.hostname.endsWith("github.io") ? "https://civic-law-lab-212.yichengc869.workers.dev" : location.origin;
     const NOTE_API_PATH = `${WORKER_API_ORIGIN}/api/messages`;
     const AI_API_PATH = `${WORKER_API_ORIGIN}/api/ai`;
+    const AUTH_API_PATH = `${WORKER_API_ORIGIN}/api/auth`;
+    const PROGRESS_API_PATH = `${WORKER_API_ORIGIN}/api/progress`;
     let noteSyncInFlight = false;
+    // The session itself lives in an HttpOnly cookie; only the CSRF token is
+    // held in memory, and it is never written to localStorage.
+    const authState = { user: null, csrfToken: "", mode: "login", busy: false, loaded: false };
     const aiState = {
       busy: false,
       statusLoaded: false,
@@ -1498,6 +1559,152 @@
       } catch {
         return crypto.randomUUID();
       }
+    }
+
+    // Cookies must ride along for every API call, and any write also carries the
+    // CSRF token handed out by /api/auth/session.
+    async function apiFetch(url, options = {}) {
+      const headers = Object.assign({ Accept: "application/json" }, options.headers || {});
+      if (options.body) headers["Content-Type"] = "application/json";
+      if (authState.csrfToken && options.method && options.method !== "GET") headers["X-CSRF-Token"] = authState.csrfToken;
+      const response = await fetch(url, Object.assign({}, options, { headers, credentials: "include" }));
+      const payload = await response.json().catch(() => ({}));
+      return { response, payload };
+    }
+
+    function renderAccount() {
+      const signedIn = Boolean(authState.user);
+      $("accountChip").textContent = signedIn ? `${authState.user.displayName}的學習紀錄` : "";
+      $("accountChip").classList.toggle("hidden", !signedIn);
+      $("logoutButton").classList.toggle("hidden", !signedIn);
+      $("accountButton").classList.toggle("hidden", signedIn);
+    }
+
+    function setAuthMessage(message) {
+      $("authMessage").textContent = message || "";
+      $("authMessage").classList.toggle("hidden", !message);
+    }
+
+    function setAuthMode(mode) {
+      authState.mode = mode === "register" ? "register" : "login";
+      const registering = authState.mode === "register";
+      document.querySelectorAll("[data-auth-tab]").forEach(button => button.classList.toggle("active", button.dataset.authTab === authState.mode));
+      $("authDisplayNameField").classList.toggle("hidden", !registering);
+      $("authPassword").setAttribute("autocomplete", registering ? "new-password" : "current-password");
+      $("authSubmit").textContent = registering ? "建立帳號" : "登入";
+      setAuthMessage("");
+    }
+
+    async function loadSession() {
+      try {
+        const { response, payload } = await apiFetch(`${AUTH_API_PATH}/session`);
+        if (!response.ok) throw new Error(payload.error || "無法確認登入狀態");
+        authState.user = payload.user || null;
+        authState.csrfToken = payload.csrfToken || "";
+      } catch {
+        authState.user = null;
+        authState.csrfToken = "";
+      }
+      authState.loaded = true;
+      renderAccount();
+      if (authState.user) await loadProgress();
+    }
+
+    async function submitAuth(event) {
+      if (event) event.preventDefault();
+      if (authState.busy) return;
+      const username = $("authUsername").value.trim().toLowerCase();
+      const password = $("authPassword").value;
+      const displayName = $("authDisplayName").value.trim();
+      if (!username || !password) { setAuthMessage("請填寫帳號與密碼。"); return; }
+      authState.busy = true;
+      $("authSubmit").disabled = true;
+      setAuthMessage("處理中…");
+      try {
+        const body = authState.mode === "register" ? { username, password, displayName } : { username, password };
+        const { response, payload } = await apiFetch(`${AUTH_API_PATH}/${authState.mode}`, { method: "POST", body: JSON.stringify(body) });
+        if (!response.ok) { setAuthMessage(payload.error || "登入失敗，請再試一次。"); return; }
+        authState.user = payload.user;
+        authState.csrfToken = payload.csrfToken || "";
+        $("authPassword").value = "";
+        renderAccount();
+        closeModals();
+        showToast(authState.mode === "register" ? "帳號建立完成，進度會自動同步" : "已登入，進度會自動同步");
+        await loadProgress();
+        await saveProgress("civics");
+        await saveProgress("daily");
+        syncSharedMessages();
+      } catch {
+        setAuthMessage("目前無法連線到伺服器，請稍後再試。");
+      } finally {
+        authState.busy = false;
+        $("authSubmit").disabled = false;
+      }
+    }
+
+    async function logout() {
+      try {
+        await apiFetch(`${AUTH_API_PATH}/logout`, { method: "POST", body: JSON.stringify({}) });
+      } catch {
+        // Ignore: the local session is dropped either way.
+      }
+      authState.user = null;
+      authState.csrfToken = "";
+      renderAccount();
+      showToast("已登出，這台裝置仍保留本次練習紀錄");
+    }
+
+    // Personal study log only. The server stores it as self-reported data and
+    // never treats it as a graded score.
+    function progressPayload(scope) {
+      if (scope === "civics") return { solved: [...civicState.solved].slice(-500), score: civicState.score };
+      if (scope === "daily") return { solved: [...dailyState.solved].slice(-500), streak: dailyState.streak };
+      return null;
+    }
+
+    function applyProgress(records) {
+      for (const record of records) {
+        const payload = record && record.payload;
+        if (!payload || typeof payload !== "object") continue;
+        if (record.scope === "civics") {
+          (Array.isArray(payload.solved) ? payload.solved : []).forEach(id => civicState.solved.add(id));
+          if (Number.isFinite(payload.score)) civicState.score = Math.max(civicState.score, payload.score);
+        }
+        if (record.scope === "daily") {
+          (Array.isArray(payload.solved) ? payload.solved : []).forEach(id => dailyState.solved.add(id));
+          if (Number.isFinite(payload.streak)) dailyState.streak = Math.max(dailyState.streak, payload.streak);
+        }
+      }
+      if ($("dailyStreak")) $("dailyStreak").textContent = dailyState.streak;
+    }
+
+    async function loadProgress() {
+      if (!authState.user) return;
+      try {
+        const { response, payload } = await apiFetch(PROGRESS_API_PATH);
+        if (!response.ok) return;
+        applyProgress(Array.isArray(payload.records) ? payload.records : []);
+      } catch {
+        // Offline: keep practising with the local state.
+      }
+    }
+
+    async function saveProgress(scope) {
+      if (!authState.user) return;
+      const payload = progressPayload(scope);
+      if (!payload) return;
+      try {
+        await apiFetch(PROGRESS_API_PATH, { method: "PUT", body: JSON.stringify({ scope, payload }) });
+      } catch {
+        // Offline: the next answer retries the save.
+      }
+    }
+
+    const progressTimers = {};
+    function queueProgressSave(scope) {
+      if (!authState.user) return;
+      clearTimeout(progressTimers[scope]);
+      progressTimers[scope] = setTimeout(() => saveProgress(scope), 1200);
     }
 
     function openNoteDatabase() {
@@ -1530,7 +1737,9 @@
       const chat = document.createElement("div");
       chat.className = "team-chat-item";
       const title = document.createElement("strong");
-      title.textContent = message.pending ? "離線待同步" : "所有裝置共用留言";
+      // Display names come from other visitors, so they stay plain text.
+      const author = message.author && message.author.displayName;
+      title.textContent = message.pending ? "離線待同步" : author ? `${author}（已登入）` : "所有裝置共用留言";
       const time = document.createElement("small");
       time.textContent = ` · ${new Date(message.createdAt).toLocaleString("zh-TW")}`;
       const content = document.createElement("div");
@@ -1542,9 +1751,8 @@
 
     async function loadNoteMessages() {
       try {
-        const response = await fetch(NOTE_API_PATH, { headers: { Accept: "application/json" } });
+        const { response, payload } = await apiFetch(NOTE_API_PATH);
         if (!response.ok) throw new Error("雲端服務暫時無法使用");
-        const payload = await response.json();
         const messages = Array.isArray(payload.messages) ? payload.messages : [];
         $("noteChatLog").innerHTML = "";
         messages.forEach(prependNoteMessage);
@@ -1567,9 +1775,8 @@
       } catch { return; }
       for (const message of pending) {
         try {
-          const response = await fetch(NOTE_API_PATH, {
+          const { response } = await apiFetch(NOTE_API_PATH, {
             method: "POST",
-            headers: { "Content-Type": "application/json", Accept: "application/json" },
             body: JSON.stringify({ text: message.text, clientId: getNoteClientId(), messageId: message.id })
           });
           if (!response.ok) break;
@@ -1590,12 +1797,10 @@
       if (!request) { $("notesResponse").textContent = "請先輸入要修改或補充的內容。"; $("notesResponse").classList.remove("hidden"); return; }
       let message = { id: crypto.randomUUID(), text: request, createdAt: new Date().toISOString(), pending: true };
       try {
-        const response = await fetch(NOTE_API_PATH, {
+        const { response, payload } = await apiFetch(NOTE_API_PATH, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
           body: JSON.stringify({ text: request, clientId: getNoteClientId(), messageId: message.id })
         });
-        const payload = await response.json().catch(() => ({}));
         if (response.status >= 400 && response.status < 500) {
           $("notesResponse").textContent = payload.error || "留言內容無法送出";
           $("notesResponse").classList.remove("hidden");
@@ -1641,8 +1846,7 @@
       if (aiState.statusLoaded) return;
       setAiStatus("loading", "正在確認 Ollama 服務…");
       try {
-        const response = await fetch(`${AI_API_PATH}/status`, { headers: { Accept: "application/json" } });
-        const payload = await response.json().catch(() => ({}));
+        const { response, payload } = await apiFetch(`${AI_API_PATH}/status`);
         aiState.statusLoaded = true;
         if (!response.ok || !payload.available) {
           setAiStatus("error", payload.error || "Ollama 服務尚未完成設定");
@@ -1671,19 +1875,18 @@
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 55_000);
       try {
-        const response = await fetch(`${AI_API_PATH}/ask`, {
+        const { response, payload } = await apiFetch(`${AI_API_PATH}/ask`, {
           method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
           body: JSON.stringify({
             question,
             clientId: getNoteClientId(),
             requestId: crypto.randomUUID(),
+            mode: "civics",
             chapter: chapter ? { id: chapter.id, code: chapter.code, title: chapter.title } : null,
             history
           }),
           signal: controller.signal
         });
-        const payload = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(payload.error || "Ollama 暫時無法回答");
         aiState.messages.push({ role: "assistant", content: payload.answer });
         setAiStatus("ready", `Ollama 已連線｜${payload.model}`);
@@ -1894,8 +2097,11 @@
       if (target.dataset.close) $(target.dataset.close).classList.remove("show");
       if (target.dataset.civicTab) setCivicTab(target.dataset.civicTab);
       if (target.dataset.topic) selectTopic(target.dataset.topic);
-      if (target.dataset.quizAnswer !== undefined) answerQuiz(Number(target.dataset.quizAnswer));
-      if (target.dataset.dailyAnswer !== undefined) answerDaily(Number(target.dataset.dailyAnswer));
+      if (target.dataset.quizAnswer !== undefined) { answerQuiz(Number(target.dataset.quizAnswer)); queueProgressSave("civics"); }
+      if (target.dataset.dailyAnswer !== undefined) { answerDaily(Number(target.dataset.dailyAnswer)); queueProgressSave("daily"); }
+      if (target.dataset.authTab) setAuthMode(target.dataset.authTab);
+      if (target.id === "accountButton") { setAuthMode("login"); openModal("authModal"); $("authUsername").focus(); }
+      if (target.id === "logoutButton") logout();
       if (target.dataset.dailyBank) { dailyState.bank = target.dataset.dailyBank; dailyState.index = 0; dailyState.queue = []; dailyState.queueTopic = null; renderDaily(); }
       if (target.dataset.dailyTopic) { dailyState.topic = target.dataset.dailyTopic; dailyState.index = 0; dailyState.queue = []; dailyState.queueTopic = null; renderDaily(); }
       if (target.id === "backToCases" || target.id === "verdictCases") showScreen("caseScreen");
@@ -1922,6 +2128,7 @@
       if (event.key === "Enter" && event.ctrlKey && document.activeElement.id === "aiQuestion") { event.preventDefault(); askCivicAi(); }
     });
     $("brandHome").addEventListener("click", goHome);
+    $("authForm").addEventListener("submit", submitAuth);
 
     renderCases();
     civicState.topic = "all";
@@ -1932,6 +2139,8 @@
     renderAiMessages();
     renderTopics();
     renderQuiz();
+    renderAccount();
+    loadSession();
     // Load law shards and shared messages only when their views are opened.
     window.addEventListener("online", syncSharedMessages);
     window.setInterval(() => {
