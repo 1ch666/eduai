@@ -6,3 +6,7 @@ dist/
 *.log
 # Local build-time Python environment (not shipped or committed).
 .court-tools/
+
+# Local secrets for wrangler dev; never commit.
+.dev.vars
+.dev.vars.*
