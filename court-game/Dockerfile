@@ -1,4 +1,8 @@
 FROM nginx:stable-alpine
+ARG SOURCE_REVISION=local
+LABEL org.opencontainers.image.source="https://github.com/1ch666/eduai" \
+      org.opencontainers.image.revision="${SOURCE_REVISION}" \
+      org.opencontainers.image.title="EduAI Court WebGL"
 # Build context is the repository root. Default: deployed WebGL output in play/.
 # To package an un-deployed local build, pass --build-arg WEB_ROOT=court-game/Builds/WebGL.
 ARG WEB_ROOT=play

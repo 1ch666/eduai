@@ -12,6 +12,14 @@ Unity 端只新增 `Assets/Scripts/NPC/WorkerDialogueProvider.cs`（`ICourtDialo
 
 ---
 
+## Docker 交接補齊
+
+新版已成功：來源 `700ed22`，https://github.com/1ch666/eduai/actions/runs/35742715223 。實際容器 build/run、兩種入口與所有遊戲資源比對、非 root／唯讀／安全標頭、revision label 及兩份 Compose 語法檢查通過。artifact `eduai-court-docker` 包含映像、獨立 Compose、README、來源版本與校驗檔；保留 1 天。這不代表手機實機遊玩已驗收。本次純文件後續提交不改動此映像內容。
+
+手機版來源 `a2d0ec3` 的 Docker run 35713693604 已成功。此次不修改遊戲或操作，補上映像來源 commit label、下載包內的版本／遊戲雜湊、獨立啟動 compose 及新手 README；新包需另跑 workflow，以成功結果為準。實機遊玩由使用者測試。載入優化維持現有壓縮及自動預載；本輪沒有可用的 Chrome DevTools 效能量測工具，不宣稱新增加速成果。
+
+---
+
 ## 手機專用操作（電腦保持原樣）
 
 新增手機／平板左下圓形移動搖桿、滑動轉向、直接輕點角色／物件、DOM 答案按鈕。手機隱藏準星，不要求 Pointer Lock；仍限制 3m 與最近 collider，不可隔牆互動。電腦不會自動顯示這套介面，保留 WASD、滑鼠、準星、E、1–4 及原本 fallback。

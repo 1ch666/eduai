@@ -19,7 +19,9 @@ jobs:
           set -euo pipefail
           node --test court-game/tools/test-template.mjs court-game/tools/test-touch.mjs
           docker compose -f court-game/compose.yaml config --quiet
-          docker build -f court-game/Dockerfile -t eduai-court:preview .
+          docker compose -f court-game/docker/compose.image.yaml config --quiet
+          docker build -f court-game/Dockerfile --build-arg SOURCE_REVISION="$GITHUB_SHA" -t eduai-court:preview .
+          test "$(docker inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' eduai-court:preview)" = "$GITHUB_SHA"
           docker run --rm eduai-court:preview nginx -t
           docker run -d --name court-check --read-only --tmpfs /tmp:size=32m,mode=1777 --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8080:8080 eduai-court:preview
           trap 'docker logs court-check; docker rm -f court-check' EXIT
@@ -44,9 +46,13 @@ jobs:
           curl -sI http://127.0.0.1:8080/ | grep -qi 'X-Content-Type-Options: nosniff'
           test "$(docker inspect --format '{{.HostConfig.ReadonlyRootfs}}' court-check)" = true
           mkdir -p handoff
+          cp court-game/docker/README.md handoff/README.md
+          cp court-game/docker/compose.image.yaml handoff/compose.image.yaml
+          printf '%s\n' "$GITHUB_SHA" > handoff/SOURCE_COMMIT.txt
+          (cd play && find . -type f -print0 | sort -z | xargs -0 sha256sum) > handoff/WEBGL-SHA256SUMS
           docker save eduai-court:preview | gzip > handoff/eduai-court-preview.tar.gz
           cd handoff
-          sha256sum eduai-court-preview.tar.gz > SHA256SUMS
+          sha256sum eduai-court-preview.tar.gz README.md compose.image.yaml SOURCE_COMMIT.txt WEBGL-SHA256SUMS > SHA256SUMS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: eduai-court-docker
