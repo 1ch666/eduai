@@ -31,9 +31,10 @@
       <h1>消失的平板</h1>
       <p>查看證物，詢問證人，再回法官處作答。</p>
       <p>需鍵盤與滑鼠：WASD 移動 · E 互動 · 1–4 選擇 · Esc 釋放滑鼠</p>
-      <button id="start" type="button">載入遊戲</button>
-      <p id="status" role="status">虛構情境，非法律意見。此版尚無手機觸控操作。</p>
-      <progress id="progress" value="0" max="1" hidden aria-label="遊戲載入進度"></progress>
+      <button id="start" type="button" disabled>正在準備遊戲</button>
+      <p id="status" role="status">正在載入 0%</p>
+      <progress id="progress" value="0" max="100" aria-label="遊戲載入進度"></progress>
+      <p>虛構情境，非法律意見。此版尚無手機觸控操作。</p>
       <p id="error" role="alert" hidden></p>
     </section>
   </main>
@@ -48,6 +49,7 @@
     const error = document.getElementById('error');
     const cover = document.getElementById('cover');
     let ready = false;
+    let entered = false;
     let unityInstance;
     let fallbackRequested = false;
     function useDragLook() {
@@ -76,38 +78,48 @@
       start.disabled = true;
     }
     start.addEventListener('click', () => {
-      if (ready) {
-        cover.hidden = true;
-        canvas.focus();
-        // 鎖定需新的使用者手勢；進入後再點擊 canvas，由 Unity 控制器處理。
-        return;
-      }
+      if (!ready || entered) return;
+      entered = true;
+      cover.hidden = true;
+      canvas.focus();
+      unityInstance.SendMessage('Player', 'BeginGame');
+      // 使用本次點擊手勢；不支援時仍走原本的拖曳視角 fallback。
+      canvas.requestPointerLock();
+    });
+    // 進頁即初始化一次；開始按鈕只進入已就緒的遊戲，不重新下載／建立 instance。
+    function preloadGame() {
       start.disabled = true;
       progress.hidden = false;
-      status.textContent = '正在載入 3D 場景…';
+      status.textContent = '正在載入 0%';
       const loader = document.createElement('script');
       loader.src = 'Build/WebGL.loader.js';
       loader.onerror = fail;
       loader.onload = () => {
         createUnityInstance(canvas, {
-          dataUrl: 'Build/WebGL.data',
-          frameworkUrl: 'Build/WebGL.framework.js',
-          codeUrl: 'Build/WebGL.wasm',
+          dataUrl: 'Build/WebGL.data.unityweb',
+          frameworkUrl: 'Build/WebGL.framework.js.unityweb',
+          codeUrl: 'Build/WebGL.wasm.unityweb',
           streamingAssetsUrl: 'StreamingAssets',
           companyName: 'EduAI', productName: 'EduAI Court', productVersion: '0.1.0',
           devicePixelRatio: Math.min(window.devicePixelRatio || 1, 1.5)
-        }, value => { progress.value = value; }).then(instance => {
+        }, value => {
+          if (!Number.isFinite(value)) return;
+          // Unity 的 1 可能早於 Promise 完成；初始化結束才顯示 100%。
+          progress.value = Math.max(progress.value, Math.min(99, Math.floor(value * 100)));
+          status.textContent = `正在載入 ${progress.value}%`;
+        }).then(instance => {
           unityInstance = instance;
           if (fallbackRequested) unityInstance.SendMessage('Player', 'EnableDragLook');
           ready = true;
-          progress.hidden = true;
+          progress.value = 100;
           start.disabled = false;
-          start.textContent = '進入法庭';
-          status.textContent = '進入後點擊畫面，即可用滑鼠轉向。';
+          start.textContent = '開始遊戲';
+          status.textContent = '載入完成 100%';
         }).catch(fail);
       };
       document.body.appendChild(loader);
-    });
+    }
+    preloadGame();
   </script>
 </body>
 </html>

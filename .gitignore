@@ -4,3 +4,5 @@ public/
 worker-configuration.d.ts
 dist/
 *.log
+# Local build-time Python environment (not shipped or committed).
+.court-tools/

@@ -15,8 +15,11 @@ namespace EduAI.Court
         private float pitch;
         private bool dragLook;
         private bool dragLookActive;
+        private bool wasDragging;
+        private Vector3 previousDragPosition;
+        private bool entered;
         public static FirstPersonController Active { get; private set; }
-        public static bool InputActive => Active && Active.IsCaptured;
+        public static bool InputActive => Active && Active.entered && Active.IsCaptured;
         public bool IsCaptured => dragLook ? dragLookActive : Cursor.lockState == CursorLockMode.Locked;
 
         public void Configure(Camera camera) { viewCamera = camera; }
@@ -31,8 +34,20 @@ namespace EduAI.Court
 #if UNITY_WEBGL && !UNITY_EDITOR
             Capture(false); // 網頁必須由玩家點擊後要求鎖定指標。
 #else
+            entered = true;
             Capture(true);
 #endif
+        }
+        // Called once by the Web cover after Unity initialization completes.
+        // Background preload must not consume keyboard/mouse input or start the case.
+        public void BeginGame()
+        {
+            if (entered) return;
+            entered = true;
+            Input.ResetInputAxes();
+            if (dragLook) Capture(true);
+            var hud = FindFirstObjectByType<InteractionUI>();
+            if (hud) hud.ShowMessage("走到前方法官桌，對準「開庭」按 E。", 15);
         }
         public void Capture(bool capture)
         {
@@ -44,7 +59,7 @@ namespace EduAI.Court
         public void EnableDragLook()
         {
             dragLook = true;
-            Capture(true);
+            Capture(entered);
             Input.ResetInputAxes();
             var hud = FindFirstObjectByType<InteractionUI>();
             if (hud) hud.ShowMessage("相容模式：按住滑鼠左鍵拖曳視角。\nWASD 移動、E 互動、1–4 作答不變。Esc 暫停。", 15);
@@ -53,6 +68,7 @@ namespace EduAI.Court
         private void OnDisable() { Capture(false); if (Active == this) Active = null; }
         private void Update()
         {
+            if (!entered) return;
             if (Input.GetKeyDown(KeyCode.Escape)) { Capture(false); return; }
             // Browsers require a fresh user gesture to recapture the pointer.
             if (!IsCaptured)
@@ -61,11 +77,22 @@ namespace EduAI.Court
                 return;
             }
             if (!viewCamera || !controller) return;
-            if (!dragLook || Input.GetMouseButton(0))
+            Vector2 look = Vector2.zero;
+            if (!dragLook) look = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
+            else
             {
-                pitch = Mathf.Clamp(pitch - Input.GetAxisRaw("Mouse Y") * mouseSensitivity, -85f, 85f);
+                bool dragging = Input.GetMouseButton(0);
+                // Reset the origin on each drag: moving the cursor before a
+                // click must not cause a sudden camera jump in fallback mode.
+                if (dragging && wasDragging) look = (Vector2)(Input.mousePosition - previousDragPosition) * .1f;
+                previousDragPosition = Input.mousePosition;
+                wasDragging = dragging;
+            }
+            if (look != Vector2.zero)
+            {
+                pitch = Mathf.Clamp(pitch - look.y * mouseSensitivity, -85f, 85f);
                 viewCamera.transform.localRotation = Quaternion.Euler(pitch, 0, 0);
-                transform.Rotate(0, Input.GetAxisRaw("Mouse X") * mouseSensitivity, 0);
+                transform.Rotate(0, look.x * mouseSensitivity, 0);
             }
             Vector2 input = Vector2.ClampMagnitude(new Vector2(
                 (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0),

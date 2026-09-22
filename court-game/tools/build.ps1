@@ -1,8 +1,15 @@
 param(
-    [Parameter(Mandatory = $true)] [string] $Editor
+    [Parameter(Mandatory = $true)] [string] $Editor,
+    [string] $Python
 )
 $ErrorActionPreference = 'Stop'
 $project = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+if (-not $Python) { $Python = Join-Path $project '../.court-tools/Scripts/python.exe' }
+if (-not (Test-Path -LiteralPath $Python)) {
+    throw '請依 tools/fonts/README.md 建立 fonttools 環境，或傳入 -Python 路徑。'
+}
+& $Python (Join-Path $PSScriptRoot 'subset-font.py') --check
+if ($LASTEXITCODE -ne 0) { throw '字型檢查失敗，請重建子集後再建置。' }
 $editorPath = (Resolve-Path -LiteralPath $Editor).Path
 if ((Split-Path $editorPath -Leaf) -ne 'Unity.exe') {
     throw '請指定已安裝 Unity Editor 的 Unity.exe，不是 Unity Hub 或 unity CLI。'

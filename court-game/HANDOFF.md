@@ -15,7 +15,9 @@
 3. 打開 Courtroom 並 Play；依下列清單實測。
 4. 可透過 batch 呼叫 `EduAI.Court.Editor.CourtProjectBuilder.ValidateScene` 與 `EduAI.Court.Editor.CourtProjectBuilder.BuildWebGL`。
 
-WebGL 以未壓縮模式輸出 `Builds/WebGL`，便於一般靜態伺服器正確提供 WASM，不依賴特定 CDN 壓縮標頭。瀏覽器可能需要第一次點擊才鎖定滑鼠；Esc 解鎖後可再次點擊恢復。這是鍵鼠原型，不宣稱支援手機觸控。
+WebGL 使用 **Release + Gzip + Decompression Fallback** 輸出 `Builds/WebGL`。`.unityweb` 由 Unity loader 解壓，不依賴伺服器 Content-Encoding；不要直接改副檔名或替壓縮檔設定 application/wasm。頁面進入後立即初始化一次、顯示進度，100% 才啟用「開始遊戲」，點擊只移除封面。Esc 解鎖後可再次點擊恢復；不支援 Pointer Lock 時按住左鍵拖曳。這是鍵鼠原型，不宣稱支援手機觸控。
+
+`BuildWebGL` 強制關閉 Development、Script Debugging、Profiler／Deep Profiling、除錯符號，開啟 Strip Engine Code，Managed Stripping 使用 Medium。High 未啟用；未來增加反射／AI 套件後須重新測試。字型已裁成靜態文字子集，新增文字前閱讀 `tools/fonts/README.md` 並重建／檢查字集；原字型保留在 tools/fonts，不進入遊戲下載。
 
 ## Docker
 
@@ -37,7 +39,7 @@ docker load -i eduai-court-preview.tar.gz
 docker run --rm --read-only --tmpfs /tmp:size=32m,mode=1777 --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8080:8080 eduai-court:preview
 ```
 
-開啟 http://localhost:8080/ 。這個映像提供已提交的 WebGL 遊戲；它仍不包含後端 session 或 AI。
+開啟 http://localhost:8080/play/ （根路徑 / 也支援）。這個映像提供已提交的 WebGL 遊戲；它仍不包含後端 session 或 AI。Dockerfile 會拒絕缺少 loader 或 Gzip 資源損毀的半成品。`.unityweb` 保持原始壓縮位元組交給 loader，CI 逐檔比較容器與 play/ 是否一致。
 
 Docker 提供靜態檔案，不能用來開啟 C# 原始碼遊玩。若缺少 index.html，建置會失敗。來源交接 zip 不是已建好的 Docker image；image tar 需完成 build/save 才會產生。替換為 Unity 輸出時，務必另外驗證 WASM 與實際遊玩。
 

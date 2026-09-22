@@ -25,8 +25,17 @@ jobs:
           curl --retry 10 --retry-connrefused --retry-delay 1 --fail http://127.0.0.1:8080/healthz
           curl --fail http://127.0.0.1:8080/ -o /tmp/court.html
           cmp play/index.html /tmp/court.html
-          curl -sI http://127.0.0.1:8080/Build/WebGL.wasm | grep -qi '^Content-Type: application/wasm'
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/Build/WebGL.data)" = 200
+          curl --fail http://127.0.0.1:8080/play/ -o /tmp/court-play.html
+          cmp play/index.html /tmp/court-play.html
+          node court-game/tools/check-build.mjs play
+          # .unityweb is decompressed by Unity's fallback; it must not depend on
+          # Content-Encoding or application/wasm on the compressed response.
+          for asset in play/Build/*; do
+            curl --fail "http://127.0.0.1:8080/Build/$(basename "$asset")" -o /tmp/court-asset
+            cmp "$asset" /tmp/court-asset
+            curl --fail "http://127.0.0.1:8080/play/Build/$(basename "$asset")" -o /tmp/court-play-asset
+            cmp "$asset" /tmp/court-play-asset
+          done
           test "$(curl -s -o /tmp/api.json -w '%{http_code}' http://127.0.0.1:8080/api/ai/ask)" = 501
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/missing)" = 404
           test "$(docker exec court-check id -u)" != 0

@@ -51,8 +51,14 @@ git status
 Windows 也可在倉庫根目錄執行（把路徑換成你的 Unity Editor）：
 
 ```powershell
+python -m venv .court-tools
+./.court-tools/Scripts/python.exe -m pip install fonttools==4.60.1
+./.court-tools/Scripts/python.exe court-game/tools/subset-font.py
 powershell -File .\court-game\tools\build.ps1 -Editor "C:\Program Files\Unity\Hub\Editor\6000.3.24f1\Editor\Unity.exe"
+node court-game/tools/check-build.mjs court-game/Builds/WebGL
 ```
+
+前兩行只需第一次安裝免費字型工具時執行。每次新增文字後重跑 `subset-font.py`；build.ps1 會檢查缺字。也可用 `-Python` 指定已安裝 fonttools 的 Python。不要把整份原始字型再放回 Assets，否則下載量會回升；未來加入任意 AI 文字時則需重新設計完整字型載入，詳見 tools/fonts/README.md。
 
 這會建立缺少的場景、測試並輸出 `court-game/Builds/WebGL/`。失敗看 `court-game/Logs/`；不要將授權檔或完整含敏感資料的紀錄推上 Git。
 
@@ -60,7 +66,7 @@ powershell -File .\court-game\tools\build.ps1 -Editor "C:\Program Files\Unity\Hu
 
 ## 5. Docker 與部署
 
-Docker 是運行網站的容器，不是 Unity 編輯器。現有 Docker 預設提供倉庫 `play/`；此目錄是空白頁還是遊戲，請看 STATUS.md，不要自行假定。
+Docker 是運行網站的容器，不是 Unity 編輯器。現有 Docker 預設提供倉庫 `play/` 的壓縮 WebGL；缺少遊戲檔案時建置會失敗。實際測試與映像版本以 STATUS.md 為準。
 
 有 Docker 且符合其使用條款時，在倉庫根目錄：
 
@@ -68,7 +74,7 @@ Docker 是運行網站的容器，不是 Unity 編輯器。現有 Docker 預設�
 docker compose -f court-game/compose.yaml up --build -d
 ```
 
-瀏覽器開 `http://localhost:8080/`。停止（不刪原始碼）：
+瀏覽器開 `http://localhost:8080/play/`（`/` 也支援）。停止（不刪原始碼）：
 
 ```sh
 docker compose -f court-game/compose.yaml down

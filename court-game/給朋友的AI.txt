@@ -10,7 +10,9 @@
 
 遊戲公開網址固定 https://1ch666.github.io/eduai/play/ 。若目前仍是空白入口，不要說已有可玩遊戲。成功建置與測試後才替換 play/。原網站及 AI API 不可擅自改動，其他人尚未提交的檔案不可還原或一起提交。
 
-部署成功後一定重新打包 Docker，確認 Docker 與線上遊戲的來源 commit 一致。驗證 HTTP、healthz、WASM MIME、缺檔404、非root與唯讀檔案系統；不要把早期空白頁映像當新遊戲。使用公開倉庫的手動 Court Docker handoff workflow 時，只使用免費標準runner，不要改成付費runner。記錄映像名稱、commit、SHA256、下載方式、有效期限與重建方法。
+部署成功後一定重新打包 Docker，確認 Docker 與線上遊戲的來源 commit 一致。驗證 / 與 /play/、healthz、全部壓縮檔位元組一致、Gzip 可解壓、解壓後 WASM magic、缺檔404、非root與唯讀檔案系統。現在用 .unityweb + Decompression Fallback，不要求壓縮檔有 application/wasm 或 Content-Encoding。不要把早期空白頁映像當新遊戲。使用公開倉庫的手動 Court Docker handoff workflow 時，只使用免費標準runner，不要改成付費runner。記錄映像名稱、commit、SHA256、下載方式、有效期限與重建方法。
+
+載入優化必須保留：進頁立刻初始化 Unity，封面顯示 0–100%，就緒後按「開始遊戲」不重建 instance；未進入前不能操作角色。維持 Release、關閉 Debug/Profiler、Gzip fallback、Strip Engine Code、Managed Stripping Medium。不要直接切 High 而跳過測試。字型是靜態子集，增加文字先讀 tools/fonts/README.md 並重建字型；未来若接 AI 動態文字，需改完整字型或按語系載入。奶蛙模型等待使用者提供檔案及授權，本次未擅自使用或宣稱已完成角色。
 
 session／登入／AI 由後端人員接續。先說清楚你準備改哪些東西、是否需要帳號設定；金鑰只放後端。前端送來的玩家進度不能作為可信權限或正式成績。不要假設 Nginx 的 /api/ 501 已經能登入或呼叫 AI。
 

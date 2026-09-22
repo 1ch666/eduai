@@ -188,9 +188,49 @@ namespace EduAI.Court.Editor
             // 部署優先：必須先成功輸出 Builds/WebGL，再測瀏覽器及 Docker。
             // 不要將 Unity Assets 當成網站成品；API key 不得進入這個建置。
             ValidateScene();
+            EditorUserBuildSettings.development = false;
+            EditorUserBuildSettings.allowDebugging = false;
+            EditorUserBuildSettings.connectProfiler = false;
+            EditorUserBuildSettings.buildWithDeepProfilingSupport = false;
+            PlayerSettings.stripEngineCode = true;
+            PlayerSettings.SetManagedStrippingLevel(UnityEditor.Build.NamedBuildTarget.WebGL, ManagedStrippingLevel.Medium);
+            // GitHub Pages cannot be configured with per-file Content-Encoding.
+            // Fallback loads .unityweb without custom server headers (also Docker/local).
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+            PlayerSettings.WebGL.decompressionFallback = true;
+            PlayerSettings.WebGL.debugSymbolMode = WebGLDebugSymbolMode.Off;
+            PlayerSettings.WebGL.dataCaching = true;
+            StripUnusedAlwaysIncludedShaders();
+            AssetDatabase.SaveAssets();
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions { scenes = new[] {ScenePath},
                 locationPathName = "Builds/WebGL", target = BuildTarget.WebGL, options = BuildOptions.None });
             if (report.summary.result != BuildResult.Succeeded) throw new Exception("WebGL build failed.");
+        }
+        private static void StripUnusedAlwaysIncludedShaders()
+        {
+            // This scene uses MeshRenderer + legacy UI Text only. Do not touch
+            // Standard/UI/font shaders, or shaders explicitly used by a material.
+            // If sprites/video are added later, restore their default shaders.
+            var used = new System.Collections.Generic.HashSet<string>();
+            foreach (string guid in AssetDatabase.FindAssets("t:Material", new[] { "Assets" }))
+            {
+                var material = AssetDatabase.LoadAssetAtPath<Material>(AssetDatabase.GUIDToAssetPath(guid));
+                if (material && material.shader) used.Add(material.shader.name);
+            }
+            bool hasSprites = UnityEngine.Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None).Length > 0;
+            var settings = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/GraphicsSettings.asset")[0]);
+            var shaders = settings.FindProperty("m_AlwaysIncludedShaders");
+            for (int i = shaders.arraySize - 1; i >= 0; i--)
+            {
+                var shader = shaders.GetArrayElementAtIndex(i).objectReferenceValue as Shader;
+                if (!shader || used.Contains(shader.name)) continue;
+                bool unusedSprite = !hasSprites && (shader.name == "Sprites/Default" || shader.name == "Sprites/Mask");
+                if (!unusedSprite) continue;
+                Debug.Log("COURT_REMOVED_UNUSED_SHADER: " + shader.name);
+                shaders.GetArrayElementAtIndex(i).objectReferenceValue = null;
+                shaders.DeleteArrayElementAtIndex(i);
+            }
+            settings.ApplyModifiedPropertiesWithoutUndo();
         }
         [MenuItem("EduAI/Apply Crosshair Layout Fix")]
         public static void ApplyCrosshairLayoutFix()
